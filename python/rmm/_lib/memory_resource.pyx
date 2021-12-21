@@ -212,17 +212,13 @@ cdef class CudaAsyncMemoryResource(DeviceMemoryResource):
         next synchronization point.
     """
     def __cinit__(self, initial_pool_size=None, release_threshold=None):
-        cdef optional[size_t] c_initial_pool_size = (
-            optional[size_t]()
-            if initial_pool_size is None
-            else optional[size_t](initial_pool_size)
-        )
+        cdef optional[size_t] c_initial_pool_size
+        if initial_pool_size is not None:
+            c_initial_pool_size = optional[size_t](initial_pool_size)
 
-        cdef optional[size_t] c_release_threshold = (
-            optional[size_t]()
-            if release_threshold is None
-            else optional[size_t](release_threshold)
-        )
+        cdef optional[size_t] c_release_threshold
+        if initial_pool_size is not None:
+            c_release_threshold = optional[size_t](release_threshold)
 
         self.c_obj.reset(
             new cuda_async_memory_resource(
@@ -255,17 +251,13 @@ cdef class PoolMemoryResource(UpstreamResourceAdaptor):
             maximum_pool_size=None
     ):
         cdef optional[size_t] c_initial_pool_size
+        if initial_pool_size is not None:
+            c_initial_pool_size = optional[size_t](initial_pool_size)
+
         cdef optional[size_t] c_maximum_pool_size
-        c_initial_pool_size = (
-            optional[size_t]() if
-            initial_pool_size is None
-            else make_optional[size_t](initial_pool_size)
-        )
-        c_maximum_pool_size = (
-            optional[size_t]() if
-            maximum_pool_size is None
-            else make_optional[size_t](maximum_pool_size)
-        )
+        if maximum_pool_size is not None:
+            c_maximum_pool_size = optional[size_t](maximum_pool_size)
+
         self.c_obj.reset(
             new pool_memory_resource[device_memory_resource](
                 upstream_mr.get_mr(),
