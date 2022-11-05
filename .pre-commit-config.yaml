@@ -26,6 +26,10 @@ repos:
             name: flake8-cython
             args: ["--config=python/.flake8.cython"]
             types: [cython]
+    - repo: https://github.com/MarcoGorelli/cython-lint
+      rev: v0.1.10
+      hooks:
+          - id: cython-lint
     - repo: local
       hooks:
             - id: cmake-format
