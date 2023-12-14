@@ -3,7 +3,7 @@ files:
   all:
     output: conda
     matrix:
-      cuda: ["11.8", "12.0"]
+      cuda: ["11.8", "12.0", "12.1"]
       arch: [x86_64]
     includes:
       - build
@@ -106,13 +106,18 @@ dependencies:
             packages:
               - cuda-version=12.0
               - cuda-nvcc
+          - matrix:
+              cuda: "12.1"
+            packages:
+              - cuda-version=12.1
+              - cuda-nvcc
       - output_types: [conda, requirements, pyproject]
         matrices:
           - matrix:
-              cuda: "12.0"
+              cuda: "12.*"
             packages:
               - &cuda_python12 cuda-python>=12.0,<13.0a0
-          - matrix: # All CUDA 11 versions
+          - matrix:  # Fallback for all other configurations
             packages:
               - &cuda_python11 cuda-python>=11.7.1,<12.0a0
   checks:
@@ -159,6 +164,10 @@ dependencies:
               cuda: "12.0"
             packages:
               - cuda-version=12.0
+          - matrix:
+              cuda: "12.1"
+            packages:
+              - cuda-version=12.1
   develop:
     common:
       - output_types: [conda, requirements]
@@ -208,10 +217,10 @@ dependencies:
       - output_types: [conda, requirements, pyproject]
         matrices:
           - matrix:
-              cuda: "12.0"
+              cuda: "12.*"
             packages:
               - *cuda_python12
-          - matrix: # All CUDA 11 versions
+          - matrix:  # Fallback for all other configurations
             packages:
               - *cuda_python11
   test_cpp:
