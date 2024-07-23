@@ -32,11 +32,7 @@ namespace rmm::mr {
  */
 /**
  * @brief Resource that prefetches all memory allocations.
- *
- * @tparam Upstream Type of the upstream resource used for
- * allocation/deallocation.
  */
-template <typename Upstream>
 class prefetch_resource_adaptor final : public device_memory_resource {
  public:
   /**
@@ -47,10 +43,7 @@ class prefetch_resource_adaptor final : public device_memory_resource {
    *
    * @param upstream The resource used for allocating/deallocating device memory
    */
-  prefetch_resource_adaptor(Upstream* upstream) : upstream_{upstream}
-  {
-    RMM_EXPECTS(nullptr != upstream, "Unexpected null upstream resource pointer.");
-  }
+  prefetch_resource_adaptor(rmm::device_async_resource_ref upstream) : upstream_{upstream} {}
 
   prefetch_resource_adaptor()                                            = delete;
   ~prefetch_resource_adaptor() override                                  = default;
@@ -69,11 +62,6 @@ class prefetch_resource_adaptor final : public device_memory_resource {
     return upstream_;
   }
 
-  /**
-   * @briefreturn{Upstream* to the upstream memory resource}
-   */
-  [[nodiscard]] Upstream* get_upstream() const noexcept { return upstream_; }
-
  private:
   /**
    * @brief Allocates memory of size at least `bytes` using the upstream
@@ -90,7 +78,7 @@ class prefetch_resource_adaptor final : public device_memory_resource {
    */
   void* do_allocate(std::size_t bytes, cuda_stream_view stream) override
   {
-    void* ptr = upstream_->allocate(bytes, stream);
+    void* ptr = upstream_.allocate(bytes, stream);
     rmm::prefetch(ptr, bytes, rmm::get_current_cuda_device(), stream);
     return ptr;
   }
@@ -104,7 +92,7 @@ class prefetch_resource_adaptor final : public device_memory_resource {
    */
   void do_deallocate(void* ptr, std::size_t bytes, cuda_stream_view stream) override
   {
-    upstream_->deallocate(ptr, bytes, stream);
+    upstream_.deallocate(ptr, bytes, stream);
   }
 
   /**
@@ -118,26 +106,13 @@ class prefetch_resource_adaptor final : public device_memory_resource {
   {
     if (this == &other) { return true; }
     auto cast = dynamic_cast<prefetch_resource_adaptor<Upstream> const*>(&other);
-    if (cast == nullptr) { return upstream_->is_equal(other); }
+    if (cast == nullptr) { return upstream_.is_equal(other); }
     return get_upstream_resource() == cast->get_upstream_resource();
   }
 
-  Upstream* upstream_;  // the upstream resource used for satisfying allocation requests
+  rmm::device_async_resource_ref
+    upstream_;  // the upstream resource used for satisfying allocation requests
 };
-
-/**
- * @brief Convenience factory to return a `prefetch_resource_adaptor` around the
- * upstream resource `upstream`.
- *
- * @tparam Upstream Type of the upstream `device_memory_resource`.
- * @param upstream Pointer to the upstream resource
- * @return The new prefetch resource adaptor
- */
-template <typename Upstream>
-prefetch_resource_adaptor<Upstream> make_prefetch_adaptor(Upstream* upstream)
-{
-  return prefetch_resource_adaptor<Upstream>{upstream};
-}
 
 /** @} */  // end of group
 }  // namespace rmm::mr
