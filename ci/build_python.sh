@@ -29,6 +29,13 @@ source rapids-rattler-channel-string
 # Creates artifacts directory for telemetry
 source rapids-telemetry-setup
 
+# Only disable channel priority on cuda11
+CHANNEL_PRIORITY="strict"
+IFS='.' read -ra CUDA_VERSION_ARRAY <<< "$RAPIDS_CUDA_VERSION"
+if [ "${CUDA_VERSION_ARRAY[0]}" -eq "11" ]; then
+  CHANNEL_PRIORITY="disabled"
+fi
+
 # --no-build-id allows for caching with `sccache`
 # more info is available at
 # https://rattler.build/latest/tips_and_tricks/#using-sccache-or-ccache-with-rattler-build
@@ -36,7 +43,7 @@ rapids-telemetry-record build.log rattler-build build \
     --recipe conda/recipes/rmm \
     --experimental \
     --no-build-id \
-    --channel-priority strict \
+    --channel-priority "${CHANNEL_PRIORITY}" \
     --output-dir "$RAPIDS_CONDA_BLD_OUTPUT_DIR" \
     -c "${CPP_CHANNEL}" \
     "${RATTLER_CHANNELS[@]}"
