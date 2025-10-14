@@ -41,7 +41,7 @@ namespace mr {
  * @tparam Upstream Type of the upstream resource used for allocation/deallocation.
  */
 template <typename Upstream>
-class thread_safe_resource_adaptor final : public device_memory_resource {
+class thread_safe_resource_adaptor_impl final : public device_memory_resource {
  public:
   using lock_t = std::lock_guard<std::mutex>;  ///< Type of lock used to synchronize access
 
@@ -53,7 +53,7 @@ class thread_safe_resource_adaptor final : public device_memory_resource {
    *
    * @param upstream The resource used for allocating/deallocating device memory.
    */
-  thread_safe_resource_adaptor(device_async_resource_ref upstream) : upstream_{upstream} {}
+  thread_safe_resource_adaptor_impl(device_async_resource_ref upstream) : upstream_{upstream} {}
 
   /**
    * @brief Construct a new thread safe resource adaptor using `upstream` to satisfy
@@ -65,17 +65,17 @@ class thread_safe_resource_adaptor final : public device_memory_resource {
    *
    * @param upstream The resource used for allocating/deallocating device memory.
    */
-  thread_safe_resource_adaptor(Upstream* upstream)
+  thread_safe_resource_adaptor_impl(Upstream* upstream)
     : upstream_{to_device_async_resource_ref_checked(upstream)}
   {
   }
 
-  thread_safe_resource_adaptor()                                               = delete;
-  ~thread_safe_resource_adaptor() override                                     = default;
-  thread_safe_resource_adaptor(thread_safe_resource_adaptor const&)            = delete;
-  thread_safe_resource_adaptor(thread_safe_resource_adaptor&&)                 = delete;
-  thread_safe_resource_adaptor& operator=(thread_safe_resource_adaptor const&) = delete;
-  thread_safe_resource_adaptor& operator=(thread_safe_resource_adaptor&&)      = delete;
+  thread_safe_resource_adaptor_impl()                                                    = delete;
+  ~thread_safe_resource_adaptor_impl() override                                          = default;
+  thread_safe_resource_adaptor_impl(thread_safe_resource_adaptor_impl const&)            = delete;
+  thread_safe_resource_adaptor_impl(thread_safe_resource_adaptor_impl&&)                 = delete;
+  thread_safe_resource_adaptor_impl& operator=(thread_safe_resource_adaptor_impl const&) = delete;
+  thread_safe_resource_adaptor_impl& operator=(thread_safe_resource_adaptor_impl&&)      = delete;
 
   /**
    * @briefreturn{rmm::device_async_resource_ref to the upstream resource}
@@ -126,7 +126,7 @@ class thread_safe_resource_adaptor final : public device_memory_resource {
   bool do_is_equal(device_memory_resource const& other) const noexcept override
   {
     if (this == &other) { return true; }
-    auto cast = dynamic_cast<thread_safe_resource_adaptor<Upstream> const*>(&other);
+    auto cast = dynamic_cast<thread_safe_resource_adaptor_impl<Upstream> const*>(&other);
     if (cast == nullptr) { return false; }
     return get_upstream_resource() == cast->get_upstream_resource();
   }
@@ -135,6 +135,26 @@ class thread_safe_resource_adaptor final : public device_memory_resource {
   device_async_resource_ref
     upstream_;  ///< The upstream resource used for satisfying allocation requests
 };
+
+/**
+ * @brief Alias for the thread_safe resource adaptor.
+ *
+ * This alias provides the intended name for the thread_safe resource adaptor that doesn't
+ * require specifying an upstream resource type. Use this alias for new code.
+ */
+using thread_safe_adaptor = thread_safe_resource_adaptor_impl<device_memory_resource>;
+
+/**
+ * @brief Deprecated alias for backward compatibility.
+ *
+ * @deprecated Use `thread_safe_adaptor` instead. This alias exists only for backward compatibility
+ * and will be removed in a future release.
+ *
+ * @tparam Upstream Type of the upstream resource used for allocation/deallocation.
+ */
+template <typename Upstream>
+using thread_safe_resource_adaptor [[deprecated("Use thread_safe_adaptor instead")]] =
+  thread_safe_resource_adaptor_impl<Upstream>;
 
 /** @} */  // end of group
 }  // namespace mr

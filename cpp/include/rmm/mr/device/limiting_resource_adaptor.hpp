@@ -46,7 +46,7 @@ namespace mr {
  * allocation/deallocation.
  */
 template <typename Upstream>
-class limiting_resource_adaptor final : public device_memory_resource {
+class limiting_resource_adaptor_impl final : public device_memory_resource {
  public:
   /**
    * @brief Construct a new limiting resource adaptor using `upstream` to satisfy
@@ -56,9 +56,9 @@ class limiting_resource_adaptor final : public device_memory_resource {
    * @param allocation_limit Maximum memory allowed for this allocator
    * @param alignment Alignment in bytes for the start of each allocated buffer
    */
-  limiting_resource_adaptor(device_async_resource_ref upstream,
-                            std::size_t allocation_limit,
-                            std::size_t alignment = CUDA_ALLOCATION_ALIGNMENT)
+  limiting_resource_adaptor_impl(device_async_resource_ref upstream,
+                                 std::size_t allocation_limit,
+                                 std::size_t alignment = CUDA_ALLOCATION_ALIGNMENT)
     : upstream_{upstream},
       allocation_limit_{allocation_limit},
       allocated_bytes_(0),
@@ -76,9 +76,9 @@ class limiting_resource_adaptor final : public device_memory_resource {
    * @param allocation_limit Maximum memory allowed for this allocator
    * @param alignment Alignment in bytes for the start of each allocated buffer
    */
-  limiting_resource_adaptor(Upstream* upstream,
-                            std::size_t allocation_limit,
-                            std::size_t alignment = CUDA_ALLOCATION_ALIGNMENT)
+  limiting_resource_adaptor_impl(Upstream* upstream,
+                                 std::size_t allocation_limit,
+                                 std::size_t alignment = CUDA_ALLOCATION_ALIGNMENT)
     : upstream_{to_device_async_resource_ref_checked(upstream)},
       allocation_limit_{allocation_limit},
       allocated_bytes_(0),
@@ -86,13 +86,13 @@ class limiting_resource_adaptor final : public device_memory_resource {
   {
   }
 
-  limiting_resource_adaptor()                                 = delete;
-  ~limiting_resource_adaptor() override                       = default;
-  limiting_resource_adaptor(limiting_resource_adaptor const&) = delete;
-  limiting_resource_adaptor(limiting_resource_adaptor&&) noexcept =
+  limiting_resource_adaptor_impl()                                      = delete;
+  ~limiting_resource_adaptor_impl() override                            = default;
+  limiting_resource_adaptor_impl(limiting_resource_adaptor_impl const&) = delete;
+  limiting_resource_adaptor_impl(limiting_resource_adaptor_impl&&) noexcept =
     default;  ///< @default_move_constructor
-  limiting_resource_adaptor& operator=(limiting_resource_adaptor const&) = delete;
-  limiting_resource_adaptor& operator=(limiting_resource_adaptor&&) noexcept =
+  limiting_resource_adaptor_impl& operator=(limiting_resource_adaptor_impl const&) = delete;
+  limiting_resource_adaptor_impl& operator=(limiting_resource_adaptor_impl&&) noexcept =
     default;  ///< @default_move_assignment{limiting_resource_adaptor}
 
   /**
@@ -180,7 +180,7 @@ class limiting_resource_adaptor final : public device_memory_resource {
   [[nodiscard]] bool do_is_equal(device_memory_resource const& other) const noexcept override
   {
     if (this == &other) { return true; }
-    auto const* cast = dynamic_cast<limiting_resource_adaptor<Upstream> const*>(&other);
+    auto const* cast = dynamic_cast<limiting_resource_adaptor_impl<Upstream> const*>(&other);
     if (cast == nullptr) { return false; }
     return get_upstream_resource() == cast->get_upstream_resource();
   }
@@ -197,6 +197,26 @@ class limiting_resource_adaptor final : public device_memory_resource {
   // todo: should be some way to ask the upstream...
   std::size_t alignment_;
 };
+
+/**
+ * @brief Alias for the limiting resource adaptor.
+ *
+ * This alias provides the intended name for the limiting resource adaptor that doesn't
+ * require specifying an upstream resource type. Use this alias for new code.
+ */
+using limiting_adaptor = limiting_resource_adaptor_impl<device_memory_resource>;
+
+/**
+ * @brief Deprecated alias for backward compatibility.
+ *
+ * @deprecated Use `limiting_adaptor` instead. This alias exists only for backward compatibility
+ * and will be removed in a future release.
+ *
+ * @tparam Upstream Type of the upstream resource used for allocation/deallocation.
+ */
+template <typename Upstream>
+using limiting_resource_adaptor [[deprecated("Use limiting_adaptor instead")]] =
+  limiting_resource_adaptor_impl<Upstream>;
 
 /** @} */  // end of group
 }  // namespace mr

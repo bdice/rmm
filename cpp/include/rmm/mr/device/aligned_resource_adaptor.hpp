@@ -59,7 +59,7 @@ namespace mr {
  * @tparam Upstream Type of the upstream resource used for allocation/deallocation.
  */
 template <typename Upstream>
-class aligned_resource_adaptor final : public device_memory_resource {
+class aligned_resource_adaptor_impl final : public device_memory_resource {
  public:
   /**
    * @brief Construct an aligned resource adaptor using `upstream` to satisfy allocation requests.
@@ -72,9 +72,10 @@ class aligned_resource_adaptor final : public device_memory_resource {
    * @param alignment_threshold Only allocations with a size larger than or equal to this threshold
    * are aligned.
    */
-  explicit aligned_resource_adaptor(device_async_resource_ref upstream,
-                                    std::size_t alignment = rmm::CUDA_ALLOCATION_ALIGNMENT,
-                                    std::size_t alignment_threshold = default_alignment_threshold)
+  explicit aligned_resource_adaptor_impl(
+    device_async_resource_ref upstream,
+    std::size_t alignment           = rmm::CUDA_ALLOCATION_ALIGNMENT,
+    std::size_t alignment_threshold = default_alignment_threshold)
     : upstream_{upstream},
       alignment_{std::max(alignment, rmm::CUDA_ALLOCATION_ALIGNMENT)},
       alignment_threshold_{alignment_threshold}
@@ -95,9 +96,10 @@ class aligned_resource_adaptor final : public device_memory_resource {
    * @param alignment_threshold Only allocations with a size larger than or equal to this threshold
    * are aligned.
    */
-  explicit aligned_resource_adaptor(Upstream* upstream,
-                                    std::size_t alignment = rmm::CUDA_ALLOCATION_ALIGNMENT,
-                                    std::size_t alignment_threshold = default_alignment_threshold)
+  explicit aligned_resource_adaptor_impl(
+    Upstream* upstream,
+    std::size_t alignment           = rmm::CUDA_ALLOCATION_ALIGNMENT,
+    std::size_t alignment_threshold = default_alignment_threshold)
     : upstream_{to_device_async_resource_ref_checked(upstream)},
       alignment_{std::max(alignment, rmm::CUDA_ALLOCATION_ALIGNMENT)},
       alignment_threshold_{alignment_threshold}
@@ -106,12 +108,12 @@ class aligned_resource_adaptor final : public device_memory_resource {
                 "Allocation alignment is not a power of 2.");
   }
 
-  aligned_resource_adaptor()                                           = delete;
-  ~aligned_resource_adaptor() override                                 = default;
-  aligned_resource_adaptor(aligned_resource_adaptor const&)            = delete;
-  aligned_resource_adaptor(aligned_resource_adaptor&&)                 = delete;
-  aligned_resource_adaptor& operator=(aligned_resource_adaptor const&) = delete;
-  aligned_resource_adaptor& operator=(aligned_resource_adaptor&&)      = delete;
+  aligned_resource_adaptor_impl()                                                = delete;
+  ~aligned_resource_adaptor_impl() override                                      = default;
+  aligned_resource_adaptor_impl(aligned_resource_adaptor_impl const&)            = delete;
+  aligned_resource_adaptor_impl(aligned_resource_adaptor_impl&&)                 = delete;
+  aligned_resource_adaptor_impl& operator=(aligned_resource_adaptor_impl const&) = delete;
+  aligned_resource_adaptor_impl& operator=(aligned_resource_adaptor_impl&&)      = delete;
 
   /**
    * @briefreturn{rmm::device_async_resource_ref to the upstream resource}
@@ -193,7 +195,7 @@ class aligned_resource_adaptor final : public device_memory_resource {
   [[nodiscard]] bool do_is_equal(device_memory_resource const& other) const noexcept override
   {
     if (this == &other) { return true; }
-    auto cast = dynamic_cast<aligned_resource_adaptor<Upstream> const*>(&other);
+    auto cast = dynamic_cast<aligned_resource_adaptor_impl<Upstream> const*>(&other);
     if (cast == nullptr) { return false; }
     return get_upstream_resource() == cast->get_upstream_resource() &&
            alignment_ == cast->alignment_ && alignment_threshold_ == cast->alignment_threshold_;
@@ -233,6 +235,26 @@ class aligned_resource_adaptor final : public device_memory_resource {
   std::size_t alignment_threshold_;  ///< The size above which allocations should be aligned
   mutable std::mutex mtx_;           ///< Mutex for exclusive lock.
 };
+
+/**
+ * @brief Alias for the aligned resource adaptor.
+ *
+ * This alias provides the intended name for the aligned resource adaptor that doesn't
+ * require specifying an upstream resource type. Use this alias for new code.
+ */
+using aligned_adaptor = aligned_resource_adaptor_impl<device_memory_resource>;
+
+/**
+ * @brief Deprecated alias for backward compatibility.
+ *
+ * @deprecated Use `aligned_adaptor` instead. This alias exists only for backward compatibility
+ * and will be removed in a future release.
+ *
+ * @tparam Upstream Type of the upstream resource used for allocation/deallocation.
+ */
+template <typename Upstream>
+using aligned_resource_adaptor [[deprecated("Use aligned_adaptor instead")]] =
+  aligned_resource_adaptor_impl<Upstream>;
 
 /** @} */  // end of group
 }  // namespace mr

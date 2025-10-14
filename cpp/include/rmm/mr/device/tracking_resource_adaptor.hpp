@@ -53,7 +53,7 @@ namespace mr {
  * allocation/deallocation.
  */
 template <typename Upstream>
-class tracking_resource_adaptor final : public device_memory_resource {
+class tracking_resource_adaptor_impl final : public device_memory_resource {
  public:
   using read_lock_t =
     std::shared_lock<std::shared_mutex>;  ///< Type of lock used to synchronize read access
@@ -90,7 +90,7 @@ class tracking_resource_adaptor final : public device_memory_resource {
    * @param upstream The resource used for allocating/deallocating device memory
    * @param capture_stacks If true, capture stacks for allocation calls
    */
-  tracking_resource_adaptor(device_async_resource_ref upstream, bool capture_stacks = false)
+  tracking_resource_adaptor_impl(device_async_resource_ref upstream, bool capture_stacks = false)
     : capture_stacks_{capture_stacks}, allocated_bytes_{0}, upstream_{upstream}
   {
   }
@@ -104,20 +104,20 @@ class tracking_resource_adaptor final : public device_memory_resource {
    * @param upstream The resource used for allocating/deallocating device memory
    * @param capture_stacks If true, capture stacks for allocation calls
    */
-  tracking_resource_adaptor(Upstream* upstream, bool capture_stacks = false)
+  tracking_resource_adaptor_impl(Upstream* upstream, bool capture_stacks = false)
     : capture_stacks_{capture_stacks},
       allocated_bytes_{0},
       upstream_{to_device_async_resource_ref_checked(upstream)}
   {
   }
 
-  tracking_resource_adaptor()                                 = delete;
-  ~tracking_resource_adaptor() override                       = default;
-  tracking_resource_adaptor(tracking_resource_adaptor const&) = delete;
-  tracking_resource_adaptor(tracking_resource_adaptor&&) noexcept =
+  tracking_resource_adaptor_impl()                                      = delete;
+  ~tracking_resource_adaptor_impl() override                            = default;
+  tracking_resource_adaptor_impl(tracking_resource_adaptor_impl const&) = delete;
+  tracking_resource_adaptor_impl(tracking_resource_adaptor_impl&&) noexcept =
     default;  ///< @default_move_constructor
-  tracking_resource_adaptor& operator=(tracking_resource_adaptor const&) = delete;
-  tracking_resource_adaptor& operator=(tracking_resource_adaptor&&) noexcept =
+  tracking_resource_adaptor_impl& operator=(tracking_resource_adaptor_impl const&) = delete;
+  tracking_resource_adaptor_impl& operator=(tracking_resource_adaptor_impl&&) noexcept =
     default;  ///< @default_move_assignment{tracking_resource_adaptor}
 
   /**
@@ -271,7 +271,7 @@ class tracking_resource_adaptor final : public device_memory_resource {
   bool do_is_equal(device_memory_resource const& other) const noexcept override
   {
     if (this == &other) { return true; }
-    auto cast = dynamic_cast<tracking_resource_adaptor<Upstream> const*>(&other);
+    auto cast = dynamic_cast<tracking_resource_adaptor_impl<Upstream> const*>(&other);
     if (cast == nullptr) { return false; }
     return get_upstream_resource() == cast->get_upstream_resource();
   }
@@ -283,6 +283,26 @@ class tracking_resource_adaptor final : public device_memory_resource {
   device_async_resource_ref upstream_;            // the upstream resource used for satisfying
                                                   // allocation requests
 };
+
+/**
+ * @brief Alias for the tracking resource adaptor.
+ *
+ * This alias provides the intended name for the tracking resource adaptor that doesn't
+ * require specifying an upstream resource type. Use this alias for new code.
+ */
+using tracking_adaptor = tracking_resource_adaptor_impl<device_memory_resource>;
+
+/**
+ * @brief Deprecated alias for backward compatibility.
+ *
+ * @deprecated Use `tracking_adaptor` instead. This alias exists only for backward compatibility
+ * and will be removed in a future release.
+ *
+ * @tparam Upstream Type of the upstream resource used for allocation/deallocation.
+ */
+template <typename Upstream>
+using tracking_resource_adaptor [[deprecated("Use tracking_adaptor instead")]] =
+  tracking_resource_adaptor_impl<Upstream>;
 
 /** @} */  // end of group
 }  // namespace mr

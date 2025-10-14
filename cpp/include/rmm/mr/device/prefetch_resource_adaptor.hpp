@@ -36,7 +36,7 @@ namespace mr {
  * allocation/deallocation.
  */
 template <typename Upstream>
-class prefetch_resource_adaptor final : public device_memory_resource {
+class prefetch_resource_adaptor_impl final : public device_memory_resource {
  public:
   /**
    * @brief Construct a new prefetch resource adaptor using `upstream` to satisfy
@@ -44,7 +44,7 @@ class prefetch_resource_adaptor final : public device_memory_resource {
    *
    * @param upstream The resource_ref used for allocating/deallocating device memory
    */
-  prefetch_resource_adaptor(device_async_resource_ref upstream) : upstream_{upstream} {}
+  prefetch_resource_adaptor_impl(device_async_resource_ref upstream) : upstream_{upstream} {}
 
   /**
    * @brief Construct a new prefetch resource adaptor using `upstream` to satisfy
@@ -54,18 +54,18 @@ class prefetch_resource_adaptor final : public device_memory_resource {
    *
    * @param upstream The resource used for allocating/deallocating device memory
    */
-  prefetch_resource_adaptor(Upstream* upstream)
+  prefetch_resource_adaptor_impl(Upstream* upstream)
     : upstream_{to_device_async_resource_ref_checked(upstream)}
   {
   }
 
-  prefetch_resource_adaptor()                                            = delete;
-  ~prefetch_resource_adaptor() override                                  = default;
-  prefetch_resource_adaptor(prefetch_resource_adaptor const&)            = delete;
-  prefetch_resource_adaptor& operator=(prefetch_resource_adaptor const&) = delete;
-  prefetch_resource_adaptor(prefetch_resource_adaptor&&) noexcept =
+  prefetch_resource_adaptor_impl()                                                 = delete;
+  ~prefetch_resource_adaptor_impl() override                                       = default;
+  prefetch_resource_adaptor_impl(prefetch_resource_adaptor_impl const&)            = delete;
+  prefetch_resource_adaptor_impl& operator=(prefetch_resource_adaptor_impl const&) = delete;
+  prefetch_resource_adaptor_impl(prefetch_resource_adaptor_impl&&) noexcept =
     default;  ///< @default_move_constructor
-  prefetch_resource_adaptor& operator=(prefetch_resource_adaptor&&) noexcept =
+  prefetch_resource_adaptor_impl& operator=(prefetch_resource_adaptor_impl&&) noexcept =
     default;  ///< @default_move_assignment{prefetch_resource_adaptor}
 
   /**
@@ -119,7 +119,7 @@ class prefetch_resource_adaptor final : public device_memory_resource {
   bool do_is_equal(device_memory_resource const& other) const noexcept override
   {
     if (this == &other) { return true; }
-    auto cast = dynamic_cast<prefetch_resource_adaptor<Upstream> const*>(&other);
+    auto cast = dynamic_cast<prefetch_resource_adaptor_impl<Upstream> const*>(&other);
     if (cast == nullptr) { return false; }
     return get_upstream_resource() == cast->get_upstream_resource();
   }
@@ -127,6 +127,26 @@ class prefetch_resource_adaptor final : public device_memory_resource {
   // the upstream resource used for satisfying allocation requests
   device_async_resource_ref upstream_;
 };
+
+/**
+ * @brief Alias for the prefetch resource adaptor.
+ *
+ * This alias provides the intended name for the prefetch resource adaptor that doesn't
+ * require specifying an upstream resource type. Use this alias for new code.
+ */
+using prefetch_adaptor = prefetch_resource_adaptor_impl<device_memory_resource>;
+
+/**
+ * @brief Deprecated alias for backward compatibility.
+ *
+ * @deprecated Use `prefetch_adaptor` instead. This alias exists only for backward compatibility
+ * and will be removed in a future release.
+ *
+ * @tparam Upstream Type of the upstream resource used for allocation/deallocation.
+ */
+template <typename Upstream>
+using prefetch_resource_adaptor [[deprecated("Use prefetch_adaptor instead")]] =
+  prefetch_resource_adaptor_impl<Upstream>;
 
 /** @} */  // end of group
 }  // namespace mr

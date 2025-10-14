@@ -39,7 +39,7 @@ namespace mr {
  * @file
  */
 /**
- * @brief Resource that uses `Upstream` to allocate memory and logs information
+ * @brief Resource implementation that uses `Upstream` to allocate memory and logs information
  * about the requested allocation/deallocations.
  *
  * An instance of this resource can be constructed with an existing, upstream
@@ -50,7 +50,7 @@ namespace mr {
  * allocation/deallocation.
  */
 template <typename Upstream>
-class logging_resource_adaptor final : public device_memory_resource {
+class logging_resource_adaptor_impl final : public device_memory_resource {
  public:
   /**
    * @brief Construct a new logging resource adaptor using `upstream` to satisfy
@@ -73,10 +73,11 @@ class logging_resource_adaptor final : public device_memory_resource {
    * @param auto_flush If true, flushes the log for every (de)allocation. Warning, this will degrade
    * performance.
    */
-  logging_resource_adaptor(Upstream* upstream,
-                           std::string const& filename = get_default_filename(),
-                           bool auto_flush             = false)
-    : logging_resource_adaptor(to_device_async_resource_ref_checked(upstream), filename, auto_flush)
+  logging_resource_adaptor_impl(Upstream* upstream,
+                                std::string const& filename = get_default_filename(),
+                                bool auto_flush             = false)
+    : logging_resource_adaptor_impl(
+        to_device_async_resource_ref_checked(upstream), filename, auto_flush)
   {
   }
 
@@ -94,8 +95,9 @@ class logging_resource_adaptor final : public device_memory_resource {
    * @param auto_flush If true, flushes the log for every (de)allocation. Warning, this will degrade
    * performance.
    */
-  logging_resource_adaptor(Upstream* upstream, std::ostream& stream, bool auto_flush = false)
-    : logging_resource_adaptor(to_device_async_resource_ref_checked(upstream), stream, auto_flush)
+  logging_resource_adaptor_impl(Upstream* upstream, std::ostream& stream, bool auto_flush = false)
+    : logging_resource_adaptor_impl(
+        to_device_async_resource_ref_checked(upstream), stream, auto_flush)
   {
   }
 
@@ -113,10 +115,11 @@ class logging_resource_adaptor final : public device_memory_resource {
    * @param auto_flush If true, flushes the log for every (de)allocation. Warning, this will degrade
    * performance.
    */
-  logging_resource_adaptor(Upstream* upstream,
-                           std::initializer_list<rapids_logger::sink_ptr> sinks,
-                           bool auto_flush = false)
-    : logging_resource_adaptor{to_device_async_resource_ref_checked(upstream), sinks, auto_flush}
+  logging_resource_adaptor_impl(Upstream* upstream,
+                                std::initializer_list<rapids_logger::sink_ptr> sinks,
+                                bool auto_flush = false)
+    : logging_resource_adaptor_impl{
+        to_device_async_resource_ref_checked(upstream), sinks, auto_flush}
   {
   }
 
@@ -140,10 +143,10 @@ class logging_resource_adaptor final : public device_memory_resource {
    * @param auto_flush If true, flushes the log for every (de)allocation. Warning, this will degrade
    * performance.
    */
-  logging_resource_adaptor(device_async_resource_ref upstream,
-                           std::string const& filename = get_default_filename(),
-                           bool auto_flush             = false)
-    : logging_resource_adaptor{make_logger(filename), upstream, auto_flush}
+  logging_resource_adaptor_impl(device_async_resource_ref upstream,
+                                std::string const& filename = get_default_filename(),
+                                bool auto_flush             = false)
+    : logging_resource_adaptor_impl{make_logger(filename), upstream, auto_flush}
   {
   }
 
@@ -159,10 +162,10 @@ class logging_resource_adaptor final : public device_memory_resource {
    * @param auto_flush If true, flushes the log for every (de)allocation. Warning, this will degrade
    * performance.
    */
-  logging_resource_adaptor(device_async_resource_ref upstream,
-                           std::ostream& stream,
-                           bool auto_flush = false)
-    : logging_resource_adaptor{make_logger(stream), upstream, auto_flush}
+  logging_resource_adaptor_impl(device_async_resource_ref upstream,
+                                std::ostream& stream,
+                                bool auto_flush = false)
+    : logging_resource_adaptor_impl{make_logger(stream), upstream, auto_flush}
   {
   }
 
@@ -178,21 +181,21 @@ class logging_resource_adaptor final : public device_memory_resource {
    * @param auto_flush If true, flushes the log for every (de)allocation. Warning, this will degrade
    * performance.
    */
-  logging_resource_adaptor(device_async_resource_ref upstream,
-                           std::initializer_list<rapids_logger::sink_ptr> sinks,
-                           bool auto_flush = false)
-    : logging_resource_adaptor{make_logger(sinks), upstream, auto_flush}
+  logging_resource_adaptor_impl(device_async_resource_ref upstream,
+                                std::initializer_list<rapids_logger::sink_ptr> sinks,
+                                bool auto_flush = false)
+    : logging_resource_adaptor_impl{make_logger(sinks), upstream, auto_flush}
   {
   }
 
-  logging_resource_adaptor()                                           = delete;
-  ~logging_resource_adaptor() override                                 = default;
-  logging_resource_adaptor(logging_resource_adaptor const&)            = delete;
-  logging_resource_adaptor& operator=(logging_resource_adaptor const&) = delete;
-  logging_resource_adaptor(logging_resource_adaptor&&) noexcept =
+  logging_resource_adaptor_impl()                                                = delete;
+  ~logging_resource_adaptor_impl() override                                      = default;
+  logging_resource_adaptor_impl(logging_resource_adaptor_impl const&)            = delete;
+  logging_resource_adaptor_impl& operator=(logging_resource_adaptor_impl const&) = delete;
+  logging_resource_adaptor_impl(logging_resource_adaptor_impl&&) noexcept =
     default;  ///< @default_move_constructor
-  logging_resource_adaptor& operator=(logging_resource_adaptor&&) noexcept =
-    default;  ///< @default_move_assignment{logging_resource_adaptor}
+  logging_resource_adaptor_impl& operator=(logging_resource_adaptor_impl&&) noexcept =
+    default;  ///< @default_move_assignment{logging_resource_adaptor_impl}
 
   /**
    * @briefreturn{rmm::device_async_resource_ref to the upstream resource}
@@ -248,9 +251,9 @@ class logging_resource_adaptor final : public device_memory_resource {
     return std::make_shared<rapids_logger::logger>("RMM", sinks);
   }
 
-  logging_resource_adaptor(std::shared_ptr<rapids_logger::logger> logger,
-                           device_async_resource_ref upstream,
-                           bool auto_flush)
+  logging_resource_adaptor_impl(std::shared_ptr<rapids_logger::logger> logger,
+                                device_async_resource_ref upstream,
+                                bool auto_flush)
     : logger_{logger}, upstream_{upstream}
   {
     if (auto_flush) { logger_->flush_on(rapids_logger::level_enum::info); }
@@ -327,7 +330,7 @@ class logging_resource_adaptor final : public device_memory_resource {
   [[nodiscard]] bool do_is_equal(device_memory_resource const& other) const noexcept override
   {
     if (this == &other) { return true; }
-    auto const* cast = dynamic_cast<logging_resource_adaptor<Upstream> const*>(&other);
+    auto const* cast = dynamic_cast<logging_resource_adaptor_impl<Upstream> const*>(&other);
     if (cast == nullptr) { return false; }
     return get_upstream_resource() == cast->get_upstream_resource();
   }
@@ -337,6 +340,26 @@ class logging_resource_adaptor final : public device_memory_resource {
   device_async_resource_ref upstream_;  ///< The upstream resource used for satisfying
                                         ///< allocation requests
 };
+
+/**
+ * @brief Alias for the logging resource adaptor.
+ *
+ * This alias provides the intended name for the logging resource adaptor that doesn't
+ * require specifying an upstream resource type. Use this alias for new code.
+ */
+using logging_adaptor = logging_resource_adaptor_impl<device_memory_resource>;
+
+/**
+ * @brief Deprecated alias for backward compatibility.
+ *
+ * @deprecated Use `logging_adaptor` instead. This alias exists only for backward compatibility
+ * and will be removed in a future release.
+ *
+ * @tparam Upstream Type of the upstream resource used for allocation/deallocation.
+ */
+template <typename Upstream>
+using logging_resource_adaptor [[deprecated("Use logging_adaptor instead")]] =
+  logging_resource_adaptor_impl<Upstream>;
 
 /** @} */  // end of group
 }  // namespace mr

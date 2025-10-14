@@ -66,7 +66,7 @@ using failure_callback_t = std::function<bool(std::size_t, void*)>;
  *
  * @code{.cpp}
  * using failure_callback_adaptor =
- *   rmm::mr::failure_callback_resource_adaptor<rmm::mr::device_memory_resource>;
+ *   rmm::mr::failure_callback_resource_adaptor_impl<rmm::mr::device_memory_resource>;
  *
  * bool failure_handler(std::size_t bytes, void* arg)
  * {
@@ -92,7 +92,7 @@ using failure_callback_t = std::function<bool(std::size_t, void*)>;
  * @tparam ExceptionType The type of exception that this adaptor should respond to
  */
 template <typename Upstream, typename ExceptionType = rmm::out_of_memory>
-class failure_callback_resource_adaptor final : public device_memory_resource {
+class failure_callback_resource_adaptor_impl final : public device_memory_resource {
  public:
   using exception_type = ExceptionType;  ///< The type of exception this object catches/throws
 
@@ -104,9 +104,9 @@ class failure_callback_resource_adaptor final : public device_memory_resource {
    * @param callback Callback function @see failure_callback_t
    * @param callback_arg Extra argument passed to `callback`
    */
-  failure_callback_resource_adaptor(device_async_resource_ref upstream,
-                                    failure_callback_t callback,
-                                    void* callback_arg)
+  failure_callback_resource_adaptor_impl(device_async_resource_ref upstream,
+                                         failure_callback_t callback,
+                                         void* callback_arg)
     : upstream_{upstream}, callback_{std::move(callback)}, callback_arg_{callback_arg}
   {
   }
@@ -121,22 +121,24 @@ class failure_callback_resource_adaptor final : public device_memory_resource {
    * @param callback Callback function @see failure_callback_t
    * @param callback_arg Extra argument passed to `callback`
    */
-  failure_callback_resource_adaptor(Upstream* upstream,
-                                    failure_callback_t callback,
-                                    void* callback_arg)
+  failure_callback_resource_adaptor_impl(Upstream* upstream,
+                                         failure_callback_t callback,
+                                         void* callback_arg)
     : upstream_{to_device_async_resource_ref_checked(upstream)},
       callback_{std::move(callback)},
       callback_arg_{callback_arg}
   {
   }
 
-  failure_callback_resource_adaptor()                                                    = delete;
-  ~failure_callback_resource_adaptor() override                                          = default;
-  failure_callback_resource_adaptor(failure_callback_resource_adaptor const&)            = delete;
-  failure_callback_resource_adaptor& operator=(failure_callback_resource_adaptor const&) = delete;
-  failure_callback_resource_adaptor(failure_callback_resource_adaptor&&) noexcept =
+  failure_callback_resource_adaptor_impl()                                              = delete;
+  ~failure_callback_resource_adaptor_impl() override                                    = default;
+  failure_callback_resource_adaptor_impl(failure_callback_resource_adaptor_impl const&) = delete;
+  failure_callback_resource_adaptor_impl& operator=(failure_callback_resource_adaptor_impl const&) =
+    delete;
+  failure_callback_resource_adaptor_impl(failure_callback_resource_adaptor_impl&&) noexcept =
     default;  ///< @default_move_constructor
-  failure_callback_resource_adaptor& operator=(failure_callback_resource_adaptor&&) noexcept =
+  failure_callback_resource_adaptor_impl& operator=(
+    failure_callback_resource_adaptor_impl&&) noexcept =
     default;  ///< @default_move_assignment{failure_callback_resource_adaptor}
 
   /**
@@ -196,7 +198,7 @@ class failure_callback_resource_adaptor final : public device_memory_resource {
   [[nodiscard]] bool do_is_equal(device_memory_resource const& other) const noexcept override
   {
     if (this == &other) { return true; }
-    auto cast = dynamic_cast<failure_callback_resource_adaptor<Upstream> const*>(&other);
+    auto cast = dynamic_cast<failure_callback_resource_adaptor_impl<Upstream> const*>(&other);
     if (cast == nullptr) { return false; }
     return get_upstream_resource() == cast->get_upstream_resource();
   }
@@ -206,6 +208,31 @@ class failure_callback_resource_adaptor final : public device_memory_resource {
   failure_callback_t callback_;
   void* callback_arg_;
 };
+
+/**
+ * @brief Alias for the failure_callback resource adaptor.
+ *
+ * This alias provides the intended name for the failure_callback resource adaptor that doesn't
+ * require specifying an upstream resource type. Use this alias for new code.
+ *
+ * @tparam ExceptionType The type of exception that this adaptor should respond to
+ */
+template <typename ExceptionType = rmm::out_of_memory>
+using failure_callback_adaptor =
+  failure_callback_resource_adaptor_impl<device_memory_resource, ExceptionType>;
+
+/**
+ * @brief Deprecated alias for backward compatibility.
+ *
+ * @deprecated Use `failure_callback_adaptor` instead. This alias exists only for backward
+ * compatibility and will be removed in a future release.
+ *
+ * @tparam Upstream Type of the upstream resource used for allocation/deallocation.
+ * @tparam ExceptionType The type of exception that this adaptor should respond to
+ */
+template <typename Upstream, typename ExceptionType = rmm::out_of_memory>
+using failure_callback_resource_adaptor [[deprecated("Use failure_callback_adaptor instead")]] =
+  failure_callback_resource_adaptor_impl<Upstream, ExceptionType>;
 
 /** @} */  // end of group
 }  // namespace mr

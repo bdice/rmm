@@ -55,7 +55,7 @@ namespace mr {
  * allocation/deallocation.
  */
 template <typename Upstream>
-class statistics_resource_adaptor final : public device_memory_resource {
+class statistics_resource_adaptor_impl final : public device_memory_resource {
  public:
   using read_lock_t =
     std::shared_lock<std::shared_mutex>;  ///< Type of lock used to synchronize read access
@@ -120,7 +120,7 @@ class statistics_resource_adaptor final : public device_memory_resource {
    *
    * @param upstream The resource_ref used for allocating/deallocating device memory.
    */
-  statistics_resource_adaptor(device_async_resource_ref upstream) : upstream_{upstream} {}
+  statistics_resource_adaptor_impl(device_async_resource_ref upstream) : upstream_{upstream} {}
 
   /**
    * @brief Construct a new statistics resource adaptor using `upstream` to satisfy
@@ -130,18 +130,18 @@ class statistics_resource_adaptor final : public device_memory_resource {
    *
    * @param upstream The resource used for allocating/deallocating device memory.
    */
-  statistics_resource_adaptor(Upstream* upstream)
+  statistics_resource_adaptor_impl(Upstream* upstream)
     : upstream_{to_device_async_resource_ref_checked(upstream)}
   {
   }
 
-  statistics_resource_adaptor()                                              = delete;
-  ~statistics_resource_adaptor() override                                    = default;
-  statistics_resource_adaptor(statistics_resource_adaptor const&)            = delete;
-  statistics_resource_adaptor& operator=(statistics_resource_adaptor const&) = delete;
-  statistics_resource_adaptor(statistics_resource_adaptor&&) noexcept =
+  statistics_resource_adaptor_impl()                                                   = delete;
+  ~statistics_resource_adaptor_impl() override                                         = default;
+  statistics_resource_adaptor_impl(statistics_resource_adaptor_impl const&)            = delete;
+  statistics_resource_adaptor_impl& operator=(statistics_resource_adaptor_impl const&) = delete;
+  statistics_resource_adaptor_impl(statistics_resource_adaptor_impl&&) noexcept =
     default;  ///< @default_move_constructor
-  statistics_resource_adaptor& operator=(statistics_resource_adaptor&&) noexcept =
+  statistics_resource_adaptor_impl& operator=(statistics_resource_adaptor_impl&&) noexcept =
     default;  ///< @default_move_assignment{statistics_resource_adaptor}
 
   /**
@@ -274,7 +274,7 @@ class statistics_resource_adaptor final : public device_memory_resource {
   bool do_is_equal(device_memory_resource const& other) const noexcept override
   {
     if (this == &other) { return true; }
-    auto cast = dynamic_cast<statistics_resource_adaptor<Upstream> const*>(&other);
+    auto cast = dynamic_cast<statistics_resource_adaptor_impl<Upstream> const*>(&other);
     if (cast == nullptr) { return false; }
     return get_upstream_resource() == cast->get_upstream_resource();
   }
@@ -286,6 +286,26 @@ class statistics_resource_adaptor final : public device_memory_resource {
   // the upstream resource used for satisfying allocation requests
   device_async_resource_ref upstream_;
 };
+
+/**
+ * @brief Alias for the statistics resource adaptor.
+ *
+ * This alias provides the intended name for the statistics resource adaptor that doesn't
+ * require specifying an upstream resource type. Use this alias for new code.
+ */
+using statistics_adaptor = statistics_resource_adaptor_impl<device_memory_resource>;
+
+/**
+ * @brief Deprecated alias for backward compatibility.
+ *
+ * @deprecated Use `statistics_adaptor` instead. This alias exists only for backward compatibility
+ * and will be removed in a future release.
+ *
+ * @tparam Upstream Type of the upstream resource used for allocation/deallocation.
+ */
+template <typename Upstream>
+using statistics_resource_adaptor [[deprecated("Use statistics_adaptor instead")]] =
+  statistics_resource_adaptor_impl<Upstream>;
 
 /** @} */  // end of group
 }  // namespace mr
