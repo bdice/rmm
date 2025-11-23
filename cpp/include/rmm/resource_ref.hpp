@@ -137,3 +137,57 @@ static_assert(std::is_constructible_v<host_resource_ref, host_device_resource_re
 
 /** @} */  // end of group
 }  // namespace RMM_NAMESPACE
+
+// Specialize std::common_type to enable ternary operator type deduction.
+// A host_device resource can be used as either a device-only or host-only resource.
+namespace std {
+
+// host_device_async_resource_ref and device_async_resource_ref -> device_async_resource_ref
+template <>
+struct common_type<RMM_NAMESPACE::host_device_async_resource_ref,
+                   RMM_NAMESPACE::device_async_resource_ref> {
+  using type = RMM_NAMESPACE::device_async_resource_ref;
+};
+
+template <>
+struct common_type<RMM_NAMESPACE::device_async_resource_ref,
+                   RMM_NAMESPACE::host_device_async_resource_ref> {
+  using type = RMM_NAMESPACE::device_async_resource_ref;
+};
+
+// host_device_resource_ref and device_resource_ref -> device_resource_ref
+template <>
+struct common_type<RMM_NAMESPACE::host_device_resource_ref, RMM_NAMESPACE::device_resource_ref> {
+  using type = RMM_NAMESPACE::device_resource_ref;
+};
+
+template <>
+struct common_type<RMM_NAMESPACE::device_resource_ref, RMM_NAMESPACE::host_device_resource_ref> {
+  using type = RMM_NAMESPACE::device_resource_ref;
+};
+
+// host_device_async_resource_ref and host_async_resource_ref -> host_async_resource_ref
+template <>
+struct common_type<RMM_NAMESPACE::host_device_async_resource_ref,
+                   RMM_NAMESPACE::host_async_resource_ref> {
+  using type = RMM_NAMESPACE::host_async_resource_ref;
+};
+
+template <>
+struct common_type<RMM_NAMESPACE::host_async_resource_ref,
+                   RMM_NAMESPACE::host_device_async_resource_ref> {
+  using type = RMM_NAMESPACE::host_async_resource_ref;
+};
+
+// host_device_resource_ref and host_resource_ref -> host_resource_ref
+template <>
+struct common_type<RMM_NAMESPACE::host_device_resource_ref, RMM_NAMESPACE::host_resource_ref> {
+  using type = RMM_NAMESPACE::host_resource_ref;
+};
+
+template <>
+struct common_type<RMM_NAMESPACE::host_resource_ref, RMM_NAMESPACE::host_device_resource_ref> {
+  using type = RMM_NAMESPACE::host_resource_ref;
+};
+
+}  // namespace std
