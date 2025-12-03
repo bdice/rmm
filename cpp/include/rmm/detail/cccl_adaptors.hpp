@@ -32,6 +32,10 @@ class cccl_resource_ref : private view_holder, public ResourceType {
  public:
   using base = ResourceType;
 
+  // Allow other instantiations to access our private base for conversions
+  template <typename>
+  friend class cccl_resource_ref;
+
   /**
    * @brief Constructs a resource reference from a raw `device_memory_resource` pointer.
    *
@@ -111,13 +115,19 @@ class cccl_resource_ref : private view_holder, public ResourceType {
    * where the source type has a superset of properties compared to the target type.
    * The underlying CCCL resource_ref types handle the actual property compatibility check.
    *
+   * IMPORTANT: This constructor must copy the view_ from the source to preserve the
+   * device_memory_resource pointer. Without this, the converted resource_ref will have
+   * an empty view_, causing corrupt pointer dereferences during deallocation.
+   *
    * @tparam OtherResourceType A CCCL resource_ref type that is convertible to ResourceType
    * @param other The source resource_ref to convert from
    */
   template <typename OtherResourceType,
             typename = std::enable_if_t<std::is_constructible_v<ResourceType, OtherResourceType>>>
   cccl_resource_ref(cccl_resource_ref<OtherResourceType> const& other)
-    : view_holder{}, base{static_cast<OtherResourceType const&>(other)}
+    : view_holder{static_cast<view_holder const&>(other)},
+      base{view_holder::view_.has_value() ? base{*view_holder::view_}
+                                          : static_cast<OtherResourceType const&>(other)}
   {
   }
 
@@ -175,6 +185,10 @@ template <typename ResourceType>
 class cccl_async_resource_ref : private view_holder, public ResourceType {
  public:
   using base = ResourceType;
+
+  // Allow other instantiations to access our private base for conversions
+  template <typename>
+  friend class cccl_async_resource_ref;
 
   /**
    * @brief Constructs an async resource reference from a raw `device_memory_resource` pointer.
@@ -259,13 +273,19 @@ class cccl_async_resource_ref : private view_holder, public ResourceType {
    * where the source type has a superset of properties compared to the target type.
    * The underlying CCCL resource_ref types handle the actual property compatibility check.
    *
+   * IMPORTANT: This constructor must copy the view_ from the source to preserve the
+   * device_memory_resource pointer. Without this, the converted resource_ref will have
+   * an empty view_, causing corrupt pointer dereferences during deallocation.
+   *
    * @tparam OtherResourceType A CCCL async resource_ref type that is convertible to ResourceType
    * @param other The source async resource_ref to convert from
    */
   template <typename OtherResourceType,
             typename = std::enable_if_t<std::is_constructible_v<ResourceType, OtherResourceType>>>
   cccl_async_resource_ref(cccl_async_resource_ref<OtherResourceType> const& other)
-    : view_holder{}, base{static_cast<OtherResourceType const&>(other)}
+    : view_holder{static_cast<view_holder const&>(other)},
+      base{view_holder::view_.has_value() ? base{*view_holder::view_}
+                                          : static_cast<OtherResourceType const&>(other)}
   {
   }
 

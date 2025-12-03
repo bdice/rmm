@@ -226,4 +226,7 @@ ConfigureTest(CONTAINER_MULTIDEVICE_TEST container_multidevice_tests.cu)
 # error macros tests
 ConfigureTest(ERROR_MACROS_TEST error_macros_tests.cpp)
 
+# CCCL 3.2 conversion bug reproducer
+ConfigureTest(CCCL32_CONVERSION_BUG_TEST cccl_32_conversion_bug.cpp)
+
 rapids_test_install_relocatable(INSTALL_COMPONENT_SET testing DESTINATION bin/gtests/librmm)
