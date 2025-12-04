@@ -117,16 +117,25 @@ class cccl_resource_ref {
    * where the source type has a superset of properties compared to the target type.
    * The underlying CCCL resource_ref types handle the actual property compatibility check.
    *
-   * IMPORTANT: This constructor must copy the view_ from the source to preserve the
-   * device_memory_resource pointer. Without this, the converted resource_ref will have
-   * an empty view_, causing corrupt pointer dereferences during deallocation.
-   *
    * @tparam OtherResourceType A CCCL resource_ref type that is convertible to ResourceType
    * @param other The source resource_ref to convert from
    */
   template <typename OtherResourceType>
   cccl_resource_ref(cccl_resource_ref<OtherResourceType> const& other)
     : view_{other.view_}, ref_{view_.has_value() ? ResourceType{*view_} : ResourceType{other.ref_}}
+  {
+  }
+
+  /**
+   * @brief Construct a ref from a resource.
+   *
+   * @tparam OtherResourceType A CCCL resource type
+   * @param other The resource to construct a ref from
+   */
+  template <
+    typename OtherResourceType,
+    std::enable_if_t<std::is_constructible_v<ResourceType, OtherResourceType const&>>* = nullptr>
+  cccl_resource_ref(OtherResourceType const& other) : cccl_resource_ref(ResourceType(other))
   {
   }
 
@@ -205,7 +214,7 @@ class cccl_resource_ref {
    * @brief Forwards a property query to the wrapped resource_ref.
    */
   template <typename Property>
-  friend auto get_property(cccl_resource_ref const& ref, Property prop) noexcept
+  friend auto constexpr get_property(cccl_resource_ref const& ref, Property prop) noexcept
     -> decltype(get_property(std::declval<ResourceType const&>(), prop))
   {
     return get_property(ref.ref_, prop);
@@ -338,6 +347,20 @@ class cccl_async_resource_ref {
   }
 
   /**
+   * @brief Construct a ref from a resource.
+   *
+   * @tparam OtherResourceType A CCCL resource type
+   * @param other The resource to construct a ref from
+   */
+  template <
+    typename OtherResourceType,
+    std::enable_if_t<std::is_constructible_v<ResourceType, OtherResourceType const&>>* = nullptr>
+  cccl_async_resource_ref(OtherResourceType const& other)
+    : cccl_async_resource_ref(ResourceType(other))
+  {
+  }
+
+  /**
    * @brief Copy assignment operator.
    *
    * If the view is present, we reconstruct the ref from our local view.
@@ -439,7 +462,7 @@ class cccl_async_resource_ref {
    * @brief Forwards a property query to the wrapped resource_ref.
    */
   template <typename Property>
-  friend auto get_property(cccl_async_resource_ref const& ref, Property prop) noexcept
+  friend auto constexpr get_property(cccl_async_resource_ref const& ref, Property prop) noexcept
     -> decltype(get_property(std::declval<ResourceType const&>(), prop))
   {
     return get_property(ref.ref_, prop);
