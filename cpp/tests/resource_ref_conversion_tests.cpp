@@ -66,8 +66,7 @@ TEST(ResourceRefConversion, ResourceToRef)
   static_assert(
     std::is_constructible_v<cuda::mr::synchronous_resource_ref<cuda::mr::host_accessible>,
                             new_delete_memory_resource&>);
-  auto ref = cuda::mr::synchronous_resource_ref<cuda::mr::host_accessible>{mr};
-  rmm::host_resource_ref mr_ref{ref};
+  rmm::host_resource_ref mr_ref{mr};
   // Use the converted ref
   void* ptr = mr_ref.allocate_sync(1024);
   ASSERT_NE(ptr, nullptr);

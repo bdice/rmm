@@ -134,8 +134,9 @@ class cccl_resource_ref {
    */
   template <
     typename OtherResourceType,
-    std::enable_if_t<std::is_constructible_v<ResourceType, OtherResourceType const&>>* = nullptr>
-  cccl_resource_ref(OtherResourceType const& other) : cccl_resource_ref(ResourceType(other))
+    std::enable_if_t<cuda::mr::synchronous_resource<OtherResourceType> and
+                     std::is_constructible_v<ResourceType, OtherResourceType const&>>* = nullptr>
+  cccl_resource_ref(OtherResourceType const& other) : view_{}, ref_{ResourceType{other}}
   {
   }
 
@@ -340,7 +341,10 @@ class cccl_async_resource_ref {
    * @tparam OtherResourceType A CCCL async resource_ref type that is convertible to ResourceType
    * @param other The source async resource_ref to convert from
    */
-  template <typename OtherResourceType>
+  template <
+    typename OtherResourceType,
+    std::enable_if_t<cuda::mr::resource<OtherResourceType> and
+                     std::is_constructible_v<ResourceType, OtherResourceType const&>>* = nullptr>
   cccl_async_resource_ref(cccl_async_resource_ref<OtherResourceType> const& other)
     : view_{other.view_}, ref_{view_.has_value() ? ResourceType{*view_} : ResourceType{other.ref_}}
   {
@@ -352,11 +356,9 @@ class cccl_async_resource_ref {
    * @tparam OtherResourceType A CCCL resource type
    * @param other The resource to construct a ref from
    */
-  template <
-    typename OtherResourceType,
-    std::enable_if_t<std::is_constructible_v<ResourceType, OtherResourceType const&>>* = nullptr>
-  cccl_async_resource_ref(OtherResourceType const& other)
-    : cccl_async_resource_ref(ResourceType(other))
+  template <typename OtherResourceType,
+            std::enable_if_t<cuda::mr::resource<OtherResourceType>>* = nullptr>
+  cccl_async_resource_ref(OtherResourceType const& other) : view_{}, ref_{ResourceType{other}}
   {
   }
 
