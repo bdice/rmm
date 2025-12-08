@@ -20,6 +20,24 @@ namespace RMM_NAMESPACE {
 namespace detail {
 
 /**
+ * @brief Helper trait to check if a type is a specialization of a class template.
+ *
+ * Used to exclude CCCL resource_ref types from resource-accepting constructors.
+ */
+template <class Type, template <class...> class Template>
+inline constexpr bool is_specialization_of_v = false;
+
+template <template <class...> class Template, class... Args>
+inline constexpr bool is_specialization_of_v<Template<Args...>, Template> = true;
+
+// Forward declarations for use in enable_if constraints
+template <typename ResourceType>
+class cccl_resource_ref;
+
+template <typename ResourceType>
+class cccl_async_resource_ref;
+
+/**
  * @brief A wrapper around CCCL synchronous_resource_ref that adds compatibility with
  * device_memory_resource pointers.
  *
@@ -129,14 +147,25 @@ class cccl_resource_ref {
   /**
    * @brief Construct a ref from a resource.
    *
-   * @tparam OtherResourceType A CCCL resource type
+   * This constructor accepts CCCL resource types but NOT CCCL resource_ref types,
+   * our own wrapper types, or device_memory_resource derived types. The exclusions
+   * are checked FIRST to prevent recursive constraint satisfaction.
+   *
+   * @tparam OtherResourceType A CCCL resource type (not a resource_ref, wrapper, or DMR)
    * @param other The resource to construct a ref from
    */
   template <
     typename OtherResourceType,
-    std::enable_if_t<cuda::mr::synchronous_resource<OtherResourceType> and
-                     std::is_constructible_v<ResourceType, OtherResourceType const&>>* = nullptr>
-  cccl_resource_ref(OtherResourceType const& other) : view_{}, ref_{ResourceType{other}}
+    std::enable_if_t<
+      not is_specialization_of_v<std::remove_cv_t<OtherResourceType>,
+                                 cuda::mr::synchronous_resource_ref> and
+      not is_specialization_of_v<std::remove_cv_t<OtherResourceType>, cuda::mr::resource_ref> and
+      not is_specialization_of_v<std::remove_cv_t<OtherResourceType>, cccl_resource_ref> and
+      not is_specialization_of_v<std::remove_cv_t<OtherResourceType>, cccl_async_resource_ref> and
+      not std::is_base_of_v<rmm::mr::device_memory_resource,
+                            std::remove_cv_t<OtherResourceType>> and
+      cuda::mr::synchronous_resource<OtherResourceType>>* = nullptr>
+  cccl_resource_ref(OtherResourceType& other) : view_{}, ref_{ResourceType{other}}
   {
   }
 
@@ -341,10 +370,7 @@ class cccl_async_resource_ref {
    * @tparam OtherResourceType A CCCL async resource_ref type that is convertible to ResourceType
    * @param other The source async resource_ref to convert from
    */
-  template <
-    typename OtherResourceType,
-    std::enable_if_t<cuda::mr::resource<OtherResourceType> and
-                     std::is_constructible_v<ResourceType, OtherResourceType const&>>* = nullptr>
+  template <typename OtherResourceType>
   cccl_async_resource_ref(cccl_async_resource_ref<OtherResourceType> const& other)
     : view_{other.view_}, ref_{view_.has_value() ? ResourceType{*view_} : ResourceType{other.ref_}}
   {
@@ -353,12 +379,25 @@ class cccl_async_resource_ref {
   /**
    * @brief Construct a ref from a resource.
    *
-   * @tparam OtherResourceType A CCCL resource type
+   * This constructor accepts CCCL resource types but NOT CCCL resource_ref types,
+   * our own wrapper types, or device_memory_resource derived types. The exclusions
+   * are checked FIRST to prevent recursive constraint satisfaction.
+   *
+   * @tparam OtherResourceType A CCCL resource type (not a resource_ref, wrapper, or DMR)
    * @param other The resource to construct a ref from
    */
-  template <typename OtherResourceType,
-            std::enable_if_t<cuda::mr::resource<OtherResourceType>>* = nullptr>
-  cccl_async_resource_ref(OtherResourceType const& other) : view_{}, ref_{ResourceType{other}}
+  template <
+    typename OtherResourceType,
+    std::enable_if_t<
+      not is_specialization_of_v<std::remove_cv_t<OtherResourceType>,
+                                 cuda::mr::synchronous_resource_ref> and
+      not is_specialization_of_v<std::remove_cv_t<OtherResourceType>, cuda::mr::resource_ref> and
+      not is_specialization_of_v<std::remove_cv_t<OtherResourceType>, cccl_resource_ref> and
+      not is_specialization_of_v<std::remove_cv_t<OtherResourceType>, cccl_async_resource_ref> and
+      not std::is_base_of_v<rmm::mr::device_memory_resource,
+                            std::remove_cv_t<OtherResourceType>> and
+      cuda::mr::resource<OtherResourceType>>* = nullptr>
+  cccl_async_resource_ref(OtherResourceType& other) : view_{}, ref_{ResourceType{other}}
   {
   }
 
