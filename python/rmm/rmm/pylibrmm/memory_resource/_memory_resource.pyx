@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2020-2025, NVIDIA CORPORATION.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026, NVIDIA CORPORATION.
 # SPDX-License-Identifier: Apache-2.0
 
 import os
@@ -30,9 +30,12 @@ from rmm.pylibrmm.stream import DEFAULT_STREAM
 from rmm.librmm.cuda_stream_view cimport cuda_stream_view
 from rmm.librmm.per_device_resource cimport (
     cuda_device_id,
-    set_per_device_resource as cpp_set_per_device_resource,
+    set_per_device_resource_ref as cpp_set_per_device_resource_ref,
 )
 from rmm.pylibrmm.helper cimport parse_bytes
+from rmm.pylibrmm.memory_resource._memory_resource cimport (
+    to_device_async_resource_ref_checked,
+)
 
 from rmm.statistics import Statistics
 
@@ -568,10 +571,11 @@ cdef class BinningMemoryResource(UpstreamResourceAdaptor):
             # Save the ref to the new bin resource to ensure its lifetime
             self._bin_mrs.append(bin_resource)
 
+            # Construct device_async_resource_ref from device_memory_resource pointer
             (<binning_memory_resource[device_memory_resource]*>(
                 self.c_obj.get()))[0].add_bin(
                     allocation_size,
-                    bin_resource.get_mr())
+                    to_device_async_resource_ref_checked(bin_resource.get_mr()))
 
     @property
     def bin_mrs(self) -> list:
@@ -1141,7 +1145,11 @@ cpdef set_per_device_resource(int device, DeviceMemoryResource mr):
     cdef unique_ptr[cuda_device_id] device_id = \
         make_unique[cuda_device_id](device)
 
-    cpp_set_per_device_resource(deref(device_id), mr.get_mr())
+    # Use resource_ref-based API with to_device_async_resource_ref_checked helper
+    cpp_set_per_device_resource_ref(
+        deref(device_id),
+        to_device_async_resource_ref_checked(mr.get_mr())
+    )
 
 
 cpdef set_current_device_resource(DeviceMemoryResource mr):
