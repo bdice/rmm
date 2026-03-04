@@ -55,6 +55,7 @@ from rmm.librmm.memory_resource cimport (
     limiting_resource_adaptor,
     logging_resource_adaptor,
     managed_memory_resource,
+    out_of_memory,
     percent_of_free_device_memory as c_percent_of_free_device_memory,
     pinned_host_memory_resource,
     pool_memory_resource,
@@ -413,7 +414,7 @@ cdef class ArenaMemoryResource(UpstreamResourceAdaptor):
             else optional[size_t](<size_t> parse_bytes(arena_size))
         )
         self.c_obj.reset(
-            new arena_memory_resource[device_memory_resource](
+            new arena_memory_resource(
                 upstream_mr.get_mr(),
                 c_arena_size,
                 dump_log_on_failure,
@@ -692,7 +693,7 @@ cdef class LimitingResourceAdaptor(UpstreamResourceAdaptor):
         size_t allocation_limit
     ):
         self.c_obj.reset(
-            new limiting_resource_adaptor[device_memory_resource](
+            new limiting_resource_adaptor(
                 upstream_mr.get_mr(),
                 allocation_limit
             )
@@ -723,7 +724,7 @@ cdef class LimitingResourceAdaptor(UpstreamResourceAdaptor):
         possible fragmentation and also internal page sizes and alignment that
         is not tracked by this allocator.
         """
-        return (<limiting_resource_adaptor[device_memory_resource]*>(
+        return (<limiting_resource_adaptor*>(
             self.c_obj.get())
         )[0].get_allocated_bytes()
 
@@ -734,7 +735,7 @@ cdef class LimitingResourceAdaptor(UpstreamResourceAdaptor):
         of the underlying device. The device may not be able to support this
         limit.
         """
-        return (<limiting_resource_adaptor[device_memory_resource]*>(
+        return (<limiting_resource_adaptor*>(
             self.c_obj.get())
         )[0].get_allocation_limit()
 
@@ -980,7 +981,7 @@ cdef class FailureCallbackResourceAdaptor(UpstreamResourceAdaptor):
     ):
         self._callback = callback
         self.c_obj.reset(
-            new failure_callback_resource_adaptor[device_memory_resource](
+            new failure_callback_resource_adaptor[out_of_memory](
                 upstream_mr.get_mr(),
                 <failure_callback_t>(_oom_callback_function),
                 <void*>(callback)
@@ -1011,7 +1012,7 @@ cdef class PrefetchResourceAdaptor(UpstreamResourceAdaptor):
         DeviceMemoryResource upstream_mr
     ):
         self.c_obj.reset(
-            new prefetch_resource_adaptor[device_memory_resource](
+            new prefetch_resource_adaptor(
                 upstream_mr.get_mr()
             )
         )

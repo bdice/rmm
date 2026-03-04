@@ -151,6 +151,16 @@ RMM_EXPORT inline auto& get_ref_map()
   return device_id_to_resource;
 }
 
+// Stores the previous any_resource per device so that device_async_resource_ref values
+// returned by set_per_device_resource_ref remain valid until the next set call.
+/// @private
+RMM_EXPORT inline auto& get_prev_ref_map()
+{
+  static std::map<cuda_device_id::value_type, cuda::mr::any_resource<cuda::mr::device_accessible>>
+    device_id_to_prev_resource;
+  return device_id_to_prev_resource;
+}
+
 }  // namespace detail
 
 /**
@@ -197,6 +207,7 @@ inline device_async_resource_ref set_per_device_resource_ref_unsafe(
 {
   using any_device_resource = cuda::mr::any_resource<cuda::mr::device_accessible>;
   auto& map                 = detail::get_ref_map();
+  auto& prev_map            = detail::get_prev_ref_map();
   auto const old_itr        = map.find(device_id.value());
   // If a resource didn't previously exist for `device_id`, return ref to initial_resource
   if (old_itr == map.end()) {
@@ -204,9 +215,11 @@ inline device_async_resource_ref set_per_device_resource_ref_unsafe(
     return device_async_resource_ref{*detail::initial_resource()};
   }
 
-  device_async_resource_ref old_resource_ref{old_itr->second};
-  old_itr->second = static_cast<any_device_resource>(new_resource_ref);  // reify and store
-  return old_resource_ref;
+  // Move the old any_resource into the prev_map so that the returned ref stays valid
+  // until the next set call (which overwrites prev_map[device_id]).
+  prev_map[device_id.value()] = std::move(old_itr->second);
+  old_itr->second             = static_cast<any_device_resource>(new_resource_ref);
+  return device_async_resource_ref{prev_map[device_id.value()]};
 }
 }  // namespace detail
 

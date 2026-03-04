@@ -157,9 +157,9 @@ cdef extern from "rmm/mr/pool_memory_resource.hpp" \
 
 cdef extern from "rmm/mr/arena_memory_resource.hpp" \
         namespace "rmm::mr" nogil:
-    cdef cppclass arena_memory_resource[Upstream](device_memory_resource):
+    cdef cppclass arena_memory_resource(device_memory_resource):
         arena_memory_resource(
-            Upstream* upstream_mr,
+            device_memory_resource* upstream_mr,
             optional[size_t] arena_size,
             bool dump_log_on_failure
         ) except +
@@ -201,9 +201,9 @@ cdef extern from "rmm/mr/binning_memory_resource.hpp" \
 
 cdef extern from "rmm/mr/limiting_resource_adaptor.hpp" \
         namespace "rmm::mr" nogil:
-    cdef cppclass limiting_resource_adaptor[Upstream](device_memory_resource):
+    cdef cppclass limiting_resource_adaptor(device_memory_resource):
         limiting_resource_adaptor(
-            Upstream* upstream_mr,
+            device_memory_resource* upstream_mr,
             size_t allocation_limit) except +
 
         size_t get_allocated_bytes() except +
@@ -246,19 +246,23 @@ cdef extern from "rmm/mr/tracking_resource_adaptor.hpp" \
         string get_outstanding_allocations_str() except +
         void log_outstanding_allocations() except +
 
+cdef extern from "rmm/error.hpp" namespace "rmm" nogil:
+    cdef cppclass out_of_memory:
+        pass
+
 cdef extern from "rmm/mr/failure_callback_resource_adaptor.hpp" \
         namespace "rmm::mr" nogil:
     ctypedef bool (*failure_callback_t)(size_t, void*)
-    cdef cppclass failure_callback_resource_adaptor[Upstream](
+    cdef cppclass failure_callback_resource_adaptor[ExceptionType](
         device_memory_resource
     ):
         failure_callback_resource_adaptor(
-            Upstream* upstream_mr,
+            device_memory_resource* upstream_mr,
             failure_callback_t callback,
             void* callback_arg
         ) except +
 
 cdef extern from "rmm/mr/prefetch_resource_adaptor.hpp" \
         namespace "rmm::mr" nogil:
-    cdef cppclass prefetch_resource_adaptor[Upstream](device_memory_resource):
-        prefetch_resource_adaptor(Upstream* upstream_mr) except +
+    cdef cppclass prefetch_resource_adaptor(device_memory_resource):
+        prefetch_resource_adaptor(device_memory_resource* upstream_mr) except +

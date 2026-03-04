@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2024-2025, NVIDIA CORPORATION.
+ * SPDX-FileCopyrightText: Copyright (c) 2024-2026, NVIDIA CORPORATION.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,13 +12,14 @@
 #include <rmm/mr/cuda_memory_resource.hpp>
 #include <rmm/mr/managed_memory_resource.hpp>
 #include <rmm/mr/prefetch_resource_adaptor.hpp>
+#include <rmm/prefetch.hpp>
 
 #include <gtest/gtest.h>
 
 #include <cstddef>
 #include <random>
 
-using prefetch_adaptor = rmm::mr::prefetch_resource_adaptor<rmm::mr::device_memory_resource>;
+using prefetch_adaptor = rmm::mr::prefetch_resource_adaptor;
 
 template <typename MemoryResourceType>
 struct PrefetchAdaptorTest : public ::testing::Test {
@@ -87,10 +88,4 @@ TYPED_TEST(PrefetchAdaptorTest, NotPrefetchedWithoutAdaptor)
   // verify not prefetched without adaptor
   rmm::device_buffer buff(this->size, this->stream, &this->mr);
   this->expect_prefetched(buff.data(), buff.size(), rmm::cuda_device_id(cudaInvalidDeviceId));
-}
-
-TEST(PrefetchAdaptorTestNullUpstream, ThrowOnNullUpstream)
-{
-  auto construct_nullptr = []() { prefetch_adaptor mr{nullptr}; };
-  EXPECT_THROW(construct_nullptr(), rmm::logic_error);
 }

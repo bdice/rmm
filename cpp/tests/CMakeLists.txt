@@ -195,9 +195,11 @@ ConfigureTest(TRACKING_MR_REF_TEST mr/mr_ref_tracking_tests.cpp GPUS 1 PERCENT 5
 
 # out-of-memory callback adaptor tests
 ConfigureTest(FAILURE_CALLBACK_TEST mr/failure_callback_mr_tests.cpp)
+ConfigureTest(FAILURE_CALLBACK_MR_REF_TEST mr/mr_ref_failure_callback_tests.cpp GPUS 1 PERCENT 5)
 
 # prefetch adaptor tests
 ConfigureTest(PREFETCH_ADAPTOR_TEST mr/prefetch_resource_adaptor_tests.cpp)
+ConfigureTest(PREFETCH_MR_REF_TEST mr/mr_ref_prefetch_tests.cpp GPUS 1 PERCENT 5)
 
 # aligned adaptor tests
 ConfigureTest(ALIGNED_TEST mr/aligned_mr_tests.cpp)
@@ -205,6 +207,7 @@ ConfigureTest(ALIGNED_MR_REF_TEST mr/mr_ref_aligned_tests.cpp GPUS 1 PERCENT 5)
 
 # limiting adaptor tests
 ConfigureTest(LIMITING_TEST mr/limiting_mr_tests.cpp)
+ConfigureTest(LIMITING_MR_REF_TEST mr/mr_ref_limiting_tests.cpp GPUS 1 PERCENT 5)
 
 # host mr_ref tests
 ConfigureTest(HOST_MR_REF_TEST mr/host_mr_ref_tests.cpp)
@@ -238,6 +241,10 @@ ConfigureTest(BINNING_MR_TEST mr/binning_mr_tests.cpp)
 
 # callback memory resource tests
 ConfigureTest(CALLBACK_MR_TEST mr/callback_mr_tests.cpp)
+ConfigureTest(CALLBACK_MR_REF_TEST mr/mr_ref_callback_tests.cpp GPUS 1 PERCENT 5)
+
+# thread-safe adaptor tests
+ConfigureTest(THREAD_SAFE_MR_REF_TEST mr/mr_ref_thread_safe_tests.cpp GPUS 1 PERCENT 5)
 
 # system memory resource tests
 ConfigureTest(SYSTEM_MR_TEST mr/system_mr_tests.cu GPUS 1 PERCENT 100)
