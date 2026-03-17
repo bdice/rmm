@@ -132,6 +132,7 @@ class aligned_resource_adaptor final : public device_memory_resource {
    */
   void* do_allocate(std::size_t bytes, cuda_stream_view stream) override
   {
+    if (bytes == 0) { return nullptr; }
     if (alignment_ == rmm::CUDA_ALLOCATION_ALIGNMENT || bytes < alignment_threshold_) {
       return get_upstream_resource().allocate(stream, bytes, 1);
     }
@@ -159,6 +160,7 @@ class aligned_resource_adaptor final : public device_memory_resource {
    */
   void do_deallocate(void* ptr, std::size_t bytes, cuda_stream_view stream) noexcept override
   {
+    if (bytes == 0) { return; }
     if (alignment_ == rmm::CUDA_ALLOCATION_ALIGNMENT || bytes < alignment_threshold_) {
       get_upstream_resource().deallocate(stream, ptr, bytes, 1);
     } else {

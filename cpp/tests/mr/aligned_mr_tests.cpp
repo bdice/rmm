@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2025, NVIDIA CORPORATION.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2026, NVIDIA CORPORATION.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -15,6 +15,8 @@
 #include <gtest/gtest.h>
 
 #include <cstddef>
+#include <thread>
+#include <vector>
 
 namespace rmm::test {
 namespace {
@@ -216,6 +218,33 @@ TEST(AlignedTest, SmallAlignmentsBumpedTo256Bytes)
     EXPECT_TRUE(rmm::is_pointer_aligned(ptr, requested_alignment));
 
     mr.deallocate_sync(ptr, requested_alignment);
+  }
+}
+
+TEST(AlignedTest, ZeroByteAllocationReturnsNullptr)
+{
+  auto const alignment{4096};
+  aligned_real mr{rmm::mr::get_current_device_resource_ref(), alignment};
+  void* ptr = mr.allocate_sync(0);
+  EXPECT_EQ(ptr, nullptr);
+  mr.deallocate_sync(ptr, 0);
+}
+
+TEST(AlignedTest, ConcurrentZeroByteAllocations)
+{
+  auto const alignment{4096};
+  aligned_real mr{rmm::mr::get_current_device_resource_ref(), alignment};
+  std::vector<std::thread> threads;
+  constexpr int num_threads{4};
+  for (int i = 0; i < num_threads; ++i) {
+    threads.emplace_back([&mr]() {
+      void* ptr = mr.allocate_sync(0);
+      EXPECT_EQ(ptr, nullptr);
+      mr.deallocate_sync(ptr, 0);
+    });
+  }
+  for (auto& t : threads) {
+    t.join();
   }
 }
 
