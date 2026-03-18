@@ -226,9 +226,9 @@ TYPED_TEST(MRRefTest, AlignmentTest)
   }
 }
 
-// UnsupportedAlignmentTest removed: alignment validation was provided by the
-// device_memory_resource base class, which is being removed. The CCCL resource
-// concept does not mandate alignment validation.
+// UnsupportedAlignmentTest removed: alignment validation was previously provided by the
+// device_memory_resource base class. The CCCL resource concept does not mandate alignment
+// validation.
 
 TEST(PinnedHostResource, isPinned)
 {
