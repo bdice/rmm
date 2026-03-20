@@ -28,7 +28,7 @@ namespace RMM_NAMESPACE {
  *
  * This class allocates untyped and *uninitialized* device memory using a
  * `device_async_resource_ref`. If not explicitly specified, the memory resource
- * returned from `get_current_device_resource_ref()` is used.
+ * returned from `get_current_device_resource()` is used.
  *
  * @note Unlike `std::vector` or `thrust::device_vector`, the device memory
  * allocated by a `device_buffer` is uninitialized. Therefore, it is undefined
@@ -95,7 +95,7 @@ class device_buffer {
    */
   explicit device_buffer(std::size_t size,
                          cuda_stream_view stream,
-                         device_async_resource_ref mr = mr::get_current_device_resource_ref());
+                         device_async_resource_ref mr = mr::get_current_device_resource());
 
   /**
    * @brief Construct a new device buffer by copying from a raw pointer to an existing host or
@@ -119,7 +119,7 @@ class device_buffer {
   device_buffer(void const* source_data,
                 std::size_t size,
                 cuda_stream_view stream,
-                device_async_resource_ref mr = mr::get_current_device_resource_ref());
+                device_async_resource_ref mr = mr::get_current_device_resource());
 
   /**
    * @brief Construct a new `device_buffer` by deep copying the contents of
@@ -144,7 +144,7 @@ class device_buffer {
    */
   device_buffer(device_buffer const& other,
                 cuda_stream_view stream,
-                device_async_resource_ref mr = mr::get_current_device_resource_ref());
+                device_async_resource_ref mr = mr::get_current_device_resource());
 
   /**
    * @brief Constructs a new `device_buffer` by moving the contents of another

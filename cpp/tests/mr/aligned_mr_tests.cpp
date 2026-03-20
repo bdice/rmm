@@ -242,7 +242,7 @@ TEST(AlignedTest, AlignRealPointer)
 {
   auto const alignment{4096};
   auto const threshold{65536};
-  aligned_adaptor mr{rmm::mr::get_current_device_resource_ref(), alignment, threshold};
+  aligned_adaptor mr{rmm::mr::get_current_device_resource(), alignment, threshold};
   void* alloc = mr.allocate_sync(threshold);
   EXPECT_TRUE(rmm::is_pointer_aligned(alloc, alignment));
   mr.deallocate_sync(alloc, threshold);
@@ -252,7 +252,7 @@ TEST(AlignedTest, SmallAlignmentsBumpedTo256Bytes)
 {
   // Test various small alignments
   for (auto requested_alignment : {32UL, 64UL, 128UL}) {
-    aligned_adaptor mr{rmm::mr::get_current_device_resource_ref(), requested_alignment};
+    aligned_adaptor mr{rmm::mr::get_current_device_resource(), requested_alignment};
 
     void* ptr = mr.allocate_sync(requested_alignment);
 

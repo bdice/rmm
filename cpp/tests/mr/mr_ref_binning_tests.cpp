@@ -13,7 +13,7 @@
 namespace rmm::test {
 
 struct BinningMRFixture : public ::testing::Test {
-  rmm::mr::binning_memory_resource mr{rmm::mr::get_current_device_resource_ref(), 18, 22};
+  rmm::mr::binning_memory_resource mr{rmm::mr::get_current_device_resource(), 18, 22};
   rmm::device_async_resource_ref ref{mr};
   rmm::cuda_stream stream{};
 };

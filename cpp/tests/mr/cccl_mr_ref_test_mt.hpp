@@ -23,19 +23,19 @@ TYPED_TEST_SUITE_P(CcclMrRefTestMT);
 
 TYPED_TEST_P(CcclMrRefTestMT, SetCurrentDeviceResourceRef_mt)
 {
-  rmm::mr::set_current_device_resource_ref(this->ref);
-  test_get_current_device_resource_ref();
+  rmm::mr::set_current_device_resource(this->ref);
+  test_get_current_device_resource();
 
   int device;
   RMM_CUDA_TRY(cudaGetDevice(&device));
 
   spawn([device]() {
     RMM_CUDA_TRY(cudaSetDevice(device));
-    test_get_current_device_resource_ref();
+    test_get_current_device_resource();
   });
 
-  rmm::mr::reset_current_device_resource_ref();
-  test_get_current_device_resource_ref();
+  rmm::mr::reset_current_device_resource();
+  test_get_current_device_resource();
 }
 
 TYPED_TEST_P(CcclMrRefTestMT, SetCurrentDeviceResourceRefPerThread_mt)
@@ -52,13 +52,13 @@ TYPED_TEST_P(CcclMrRefTestMT, SetCurrentDeviceResourceRefPerThread_mt)
     threads.emplace_back(
       [mr](auto dev_id) {
         RMM_CUDA_TRY(cudaSetDevice(dev_id));
-        test_get_current_device_resource_ref();
+        test_get_current_device_resource();
 
-        rmm::mr::set_current_device_resource_ref(mr);
-        test_get_current_device_resource_ref();
+        rmm::mr::set_current_device_resource(mr);
+        test_get_current_device_resource();
 
-        rmm::mr::reset_current_device_resource_ref();
-        test_get_current_device_resource_ref();
+        rmm::mr::reset_current_device_resource();
+        test_get_current_device_resource();
       },
       i);
   }

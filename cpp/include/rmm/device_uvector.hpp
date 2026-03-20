@@ -123,7 +123,7 @@ class device_uvector {
    */
   explicit device_uvector(size_type size,
                           cuda_stream_view stream,
-                          device_async_resource_ref mr = mr::get_current_device_resource_ref())
+                          device_async_resource_ref mr = mr::get_current_device_resource())
     : _storage{elements_to_bytes(size), stream, mr}
   {
   }
@@ -139,7 +139,7 @@ class device_uvector {
    */
   explicit device_uvector(device_uvector const& other,
                           cuda_stream_view stream,
-                          device_async_resource_ref mr = mr::get_current_device_resource_ref())
+                          device_async_resource_ref mr = mr::get_current_device_resource())
     : _storage{other._storage, stream, mr}
   {
   }

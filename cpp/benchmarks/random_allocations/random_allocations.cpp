@@ -170,7 +170,7 @@ inline any_device_resource make_arena()
   auto free = rmm::available_device_memory().first;
   constexpr auto reserve{64UL << 20};  // Leave some space for CUDA overhead.
   return any_device_resource{
-    rmm::mr::arena_memory_resource{rmm::mr::get_current_device_resource_ref(), free - reserve}};
+    rmm::mr::arena_memory_resource{rmm::mr::get_current_device_resource(), free - reserve}};
 }
 
 inline any_device_resource make_binning()

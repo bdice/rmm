@@ -12,7 +12,7 @@
 
 namespace rmm {
 
-device_buffer::device_buffer() : _mr{rmm::mr::get_current_device_resource_ref()} {}
+device_buffer::device_buffer() : _mr{rmm::mr::get_current_device_resource()} {}
 
 device_buffer::device_buffer(std::size_t size,
                              cuda_stream_view stream,

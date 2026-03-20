@@ -13,7 +13,7 @@
 namespace rmm::test {
 
 struct LimitingMRFixture : public ::testing::Test {
-  rmm::mr::limiting_resource_adaptor mr{rmm::mr::get_current_device_resource_ref(),
+  rmm::mr::limiting_resource_adaptor mr{rmm::mr::get_current_device_resource(),
                                         1ULL << 30};  // 1 GiB limit
   rmm::device_async_resource_ref ref{mr};
   rmm::cuda_stream stream{};

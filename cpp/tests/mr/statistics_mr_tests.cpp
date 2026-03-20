@@ -83,7 +83,7 @@ TEST_P(allocation_size, MultiThreaded)
 
 TEST(StatisticsTest, Empty)
 {
-  statistics_adaptor mr{rmm::mr::get_current_device_resource_ref()};
+  statistics_adaptor mr{rmm::mr::get_current_device_resource()};
 
   EXPECT_EQ(mr.get_bytes_counter().peak, 0);
   EXPECT_EQ(mr.get_bytes_counter().total, 0);
@@ -96,7 +96,7 @@ TEST(StatisticsTest, Empty)
 
 TEST(StatisticsTest, AllFreed)
 {
-  statistics_adaptor mr{rmm::mr::get_current_device_resource_ref()};
+  statistics_adaptor mr{rmm::mr::get_current_device_resource()};
   std::vector<void*> allocations;
 
   allocations.reserve(num_allocations);
@@ -114,7 +114,7 @@ TEST(StatisticsTest, AllFreed)
 
 TEST(StatisticsTest, PeakAllocations)
 {
-  statistics_adaptor mr{rmm::mr::get_current_device_resource_ref()};
+  statistics_adaptor mr{rmm::mr::get_current_device_resource()};
   std::vector<void*> allocations;
 
   for (std::size_t i = 0; i < num_allocations; ++i) {
@@ -172,7 +172,7 @@ TEST(StatisticsTest, MultiTracking)
 {
   // Test stacking multiple statistics adaptors, using explicit resource refs
   // to avoid lifetime issues with the global device resource map
-  auto orig_device_resource = rmm::mr::get_current_device_resource_ref();
+  auto orig_device_resource = rmm::mr::get_current_device_resource();
   statistics_adaptor mr{orig_device_resource};
 
   std::vector<std::shared_ptr<rmm::device_buffer>> allocations;
@@ -221,7 +221,7 @@ TEST(StatisticsTest, NegativeInnerTracking)
   // This tests the unlikely scenario where pointers are deallocated on an inner
   // wrapped memory resource. This can happen if the MR is not saved with the
   // memory pointer
-  statistics_adaptor mr{rmm::mr::get_current_device_resource_ref()};
+  statistics_adaptor mr{rmm::mr::get_current_device_resource()};
   std::vector<void*> allocations;
   for (std::size_t i = 0; i < num_allocations; ++i) {
     allocations.push_back(mr.allocate_sync(ten_MiB));
@@ -277,7 +277,7 @@ TEST(StatisticsTest, NegativeInnerTracking)
 
 TEST(StatisticsTest, Nested)
 {
-  statistics_adaptor mr{rmm::mr::get_current_device_resource_ref()};
+  statistics_adaptor mr{rmm::mr::get_current_device_resource()};
   void* a0 = mr.allocate_sync(ten_MiB);
   EXPECT_EQ(mr.get_bytes_counter().value, ten_MiB);
   EXPECT_EQ(mr.get_allocations_counter().value, 1);

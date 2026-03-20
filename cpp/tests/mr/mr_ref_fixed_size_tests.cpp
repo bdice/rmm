@@ -12,7 +12,7 @@ namespace rmm::test {
 
 // Note: Fixed_Size MR cannot handle dynamic allocation sizes, so only basic tests are included
 struct FixedSizeMRFixture : public ::testing::Test {
-  rmm::mr::fixed_size_memory_resource mr{rmm::mr::get_current_device_resource_ref()};
+  rmm::mr::fixed_size_memory_resource mr{rmm::mr::get_current_device_resource()};
   rmm::device_async_resource_ref ref{mr};
   rmm::cuda_stream stream{};
 };

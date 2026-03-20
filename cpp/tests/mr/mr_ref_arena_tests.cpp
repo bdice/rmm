@@ -34,7 +34,7 @@ INSTANTIATE_TEST_SUITE_P(ArenaMultiThreadResourceTests,
 }  // namespace
 
 struct ArenaMRFixture : public ::testing::Test {
-  rmm::mr::arena_memory_resource mr{rmm::mr::get_current_device_resource_ref()};
+  rmm::mr::arena_memory_resource mr{rmm::mr::get_current_device_resource()};
   rmm::device_async_resource_ref ref{mr};
   rmm::cuda_stream stream{};
 };

@@ -14,7 +14,7 @@ namespace rmm::test {
 
 struct FailureCallbackMRFixture : public ::testing::Test {
   rmm::mr::failure_callback_resource_adaptor<> mr{
-    rmm::mr::get_current_device_resource_ref(), [](std::size_t, void*) { return false; }, nullptr};
+    rmm::mr::get_current_device_resource(), [](std::size_t, void*) { return false; }, nullptr};
   rmm::device_async_resource_ref ref{mr};
   rmm::cuda_stream stream{};
 };

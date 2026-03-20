@@ -40,11 +40,11 @@ void spawn(Task task, Arguments&&... args)
 
 // Single-threaded default resource tests
 
-TEST(DefaultTest, UseCurrentDeviceResourceRef) { test_get_current_device_resource_ref(); }
+TEST(DefaultTest, UseCurrentDeviceResourceRef) { test_get_current_device_resource(); }
 
 TEST(DefaultTest, GetCurrentDeviceResourceRef)
 {
-  auto mr = rmm::mr::get_current_device_resource_ref();
+  auto mr = rmm::mr::get_current_device_resource();
   EXPECT_EQ(mr, rmm::device_async_resource_ref{rmm::mr::detail::initial_resource()});
 }
 
@@ -52,9 +52,9 @@ TEST(DefaultTest, SetCurrentDeviceResourceRef)
 {
   rmm::mr::cuda_memory_resource cuda_mr{};
 
-  rmm::mr::set_current_device_resource_ref(cuda_mr);
+  rmm::mr::set_current_device_resource(cuda_mr);
 
-  auto ref = rmm::mr::get_current_device_resource_ref();
+  auto ref = rmm::mr::get_current_device_resource();
 
   constexpr std::size_t size{1024};
   void* ptr = ref.allocate_sync(size);
@@ -64,17 +64,17 @@ TEST(DefaultTest, SetCurrentDeviceResourceRef)
 
   ref.deallocate_sync(ptr, size);
 
-  rmm::mr::reset_current_device_resource_ref();
+  rmm::mr::reset_current_device_resource();
 }
 
 // Multi-threaded default resource tests
 
-TEST(DefaultTest, UseCurrentDeviceResourceRef_mt) { spawn(test_get_current_device_resource_ref); }
+TEST(DefaultTest, UseCurrentDeviceResourceRef_mt) { spawn(test_get_current_device_resource); }
 
 TEST(DefaultTest, CurrentDeviceResourceRefIsCUDA_mt)
 {
   spawn([]() {
-    EXPECT_EQ(rmm::mr::get_current_device_resource_ref(),
+    EXPECT_EQ(rmm::mr::get_current_device_resource(),
               rmm::device_async_resource_ref{rmm::mr::detail::initial_resource()});
   });
 }
@@ -82,7 +82,7 @@ TEST(DefaultTest, CurrentDeviceResourceRefIsCUDA_mt)
 TEST(DefaultTest, GetCurrentDeviceResourceRef_mt)
 {
   spawn([]() {
-    auto mr = rmm::mr::get_current_device_resource_ref();
+    auto mr = rmm::mr::get_current_device_resource();
     EXPECT_EQ(mr, rmm::device_async_resource_ref{rmm::mr::detail::initial_resource()});
   });
 }

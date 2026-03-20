@@ -19,7 +19,7 @@ using limiting_adaptor = rmm::mr::limiting_resource_adaptor;
 TEST(LimitingTest, TooBig)
 {
   auto const max_size{5_MiB};
-  limiting_adaptor mr{rmm::mr::get_current_device_resource_ref(), max_size};
+  limiting_adaptor mr{rmm::mr::get_current_device_resource(), max_size};
   EXPECT_THROW((void)mr.allocate_sync(max_size + 1), rmm::out_of_memory);
 }
 
@@ -27,7 +27,7 @@ TEST(LimitingTest, UpstreamFailure)
 {
   auto const max_size_1{2_MiB};
   auto const max_size_2{5_MiB};
-  limiting_adaptor mr1{rmm::mr::get_current_device_resource_ref(), max_size_1};
+  limiting_adaptor mr1{rmm::mr::get_current_device_resource(), max_size_1};
   limiting_adaptor mr2{mr1, max_size_2};
   EXPECT_THROW((void)mr2.allocate_sync(4_MiB), rmm::out_of_memory);
 }
@@ -35,7 +35,7 @@ TEST(LimitingTest, UpstreamFailure)
 TEST(LimitingTest, UnderLimitDueToFrees)
 {
   auto const max_size{10_MiB};
-  limiting_adaptor mr{rmm::mr::get_current_device_resource_ref(), max_size};
+  limiting_adaptor mr{rmm::mr::get_current_device_resource(), max_size};
   auto const size1{4_MiB};
   auto* ptr1           = mr.allocate_sync(size1);
   auto allocated_bytes = size1;
@@ -63,7 +63,7 @@ TEST(LimitingTest, UnderLimitDueToFrees)
 TEST(LimitingTest, OverLimit)
 {
   auto const max_size{10_MiB};
-  limiting_adaptor mr{rmm::mr::get_current_device_resource_ref(), max_size};
+  limiting_adaptor mr{rmm::mr::get_current_device_resource(), max_size};
   auto const size1{4_MiB};
   auto* ptr1           = mr.allocate_sync(size1);
   auto allocated_bytes = size1;

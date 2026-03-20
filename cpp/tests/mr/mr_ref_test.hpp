@@ -90,13 +90,13 @@ struct allocation {
 
 // Various test functions, shared between single-threaded and multithreaded tests.
 
-inline void test_get_current_device_resource_ref()
+inline void test_get_current_device_resource()
 {
-  void* ptr = rmm::mr::get_current_device_resource_ref().allocate_sync(1_MiB);
+  void* ptr = rmm::mr::get_current_device_resource().allocate_sync(1_MiB);
   EXPECT_NE(nullptr, ptr);
   EXPECT_TRUE(is_properly_aligned(ptr));
   EXPECT_TRUE(is_device_accessible_memory(ptr));
-  rmm::mr::get_current_device_resource_ref().deallocate_sync(ptr, 1_MiB);
+  rmm::mr::get_current_device_resource().deallocate_sync(ptr, 1_MiB);
 }
 
 inline void test_allocate(resource_ref ref, std::size_t bytes)
@@ -390,14 +390,13 @@ inline auto make_system()
 
 inline auto make_arena()
 {
-  return std::make_shared<rmm::mr::arena_memory_resource>(
-    rmm::mr::get_current_device_resource_ref());
+  return std::make_shared<rmm::mr::arena_memory_resource>(rmm::mr::get_current_device_resource());
 }
 
 inline auto make_fixed_size()
 {
   return std::make_shared<rmm::mr::fixed_size_memory_resource>(
-    rmm::mr::get_current_device_resource_ref());
+    rmm::mr::get_current_device_resource());
 }
 
 inline auto make_binning()
@@ -408,12 +407,12 @@ inline auto make_binning()
   auto const bin_range_end{22};
 
   return std::make_shared<rmm::mr::binning_memory_resource>(
-    rmm::mr::get_current_device_resource_ref(), bin_range_start, bin_range_end);
+    rmm::mr::get_current_device_resource(), bin_range_start, bin_range_end);
 }
 
 struct mr_factory_base {
   std::string name{};  ///< Name to associate with tests that use this factory
-  resource_ref mr{rmm::mr::get_current_device_resource_ref()};
+  resource_ref mr{rmm::mr::get_current_device_resource()};
   bool skip_test{false};
 };
 
@@ -484,7 +483,7 @@ struct mr_ref_test : public ::testing::TestWithParam<std::string> {
   }
 
   std::shared_ptr<mr_factory_base> factory_obj{};
-  resource_ref ref{rmm::mr::get_current_device_resource_ref()};
+  resource_ref ref{rmm::mr::get_current_device_resource()};
   rmm::cuda_stream stream{};
 };
 

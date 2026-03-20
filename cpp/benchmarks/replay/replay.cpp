@@ -63,10 +63,10 @@ inline any_device_resource make_arena(std::size_t simulated_size)
 {
   if (simulated_size > 0) {
     return any_device_resource{
-      rmm::mr::arena_memory_resource{rmm::mr::get_current_device_resource_ref(), simulated_size}};
+      rmm::mr::arena_memory_resource{rmm::mr::get_current_device_resource(), simulated_size}};
   }
   return any_device_resource{
-    rmm::mr::arena_memory_resource{rmm::mr::get_current_device_resource_ref()}};
+    rmm::mr::arena_memory_resource{rmm::mr::get_current_device_resource()}};
 }
 
 inline any_device_resource make_binning(std::size_t simulated_size)

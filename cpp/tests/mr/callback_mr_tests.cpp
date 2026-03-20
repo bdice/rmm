@@ -50,7 +50,7 @@ TEST(CallbackTest, LoggingTest)
 {
   testing::internal::CaptureStdout();
 
-  auto base_mr           = rmm::mr::get_current_device_resource_ref();
+  auto base_mr           = rmm::mr::get_current_device_resource();
   auto allocate_callback = [](std::size_t size, cuda_stream_view stream, void* arg) {
     std::cout << "Allocating " << size << " bytes" << std::endl;
     auto base_mr = *static_cast<rmm::device_async_resource_ref*>(arg);

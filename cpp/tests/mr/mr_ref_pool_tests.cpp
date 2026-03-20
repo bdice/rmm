@@ -13,7 +13,7 @@
 namespace rmm::test {
 
 struct PoolMRFixture : public ::testing::Test {
-  rmm::mr::pool_memory_resource mr{rmm::mr::get_current_device_resource_ref(), 0};
+  rmm::mr::pool_memory_resource mr{rmm::mr::get_current_device_resource(), 0};
   rmm::device_async_resource_ref ref{mr};
   rmm::cuda_stream stream{};
 };

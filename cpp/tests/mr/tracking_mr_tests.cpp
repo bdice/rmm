@@ -86,14 +86,14 @@ TEST_P(allocation_size, MultiThreaded)
 
 TEST(TrackingTest, Empty)
 {
-  tracking_adaptor mr{rmm::mr::get_current_device_resource_ref()};
+  tracking_adaptor mr{rmm::mr::get_current_device_resource()};
   EXPECT_EQ(mr.get_outstanding_allocations().size(), 0);
   EXPECT_EQ(mr.get_allocated_bytes(), 0);
 }
 
 TEST(TrackingTest, AllFreed)
 {
-  tracking_adaptor mr{rmm::mr::get_current_device_resource_ref()};
+  tracking_adaptor mr{rmm::mr::get_current_device_resource()};
   std::vector<void*> allocations;
   allocations.reserve(num_allocations);
   for (int i = 0; i < num_allocations; ++i) {
@@ -108,7 +108,7 @@ TEST(TrackingTest, AllFreed)
 
 TEST(TrackingTest, AllocationsLeftWithStacks)
 {
-  tracking_adaptor mr{rmm::mr::get_current_device_resource_ref(), true};
+  tracking_adaptor mr{rmm::mr::get_current_device_resource(), true};
   std::vector<void*> allocations;
   allocations.reserve(num_allocations);
   for (int i = 0; i < num_allocations; ++i) {
@@ -126,7 +126,7 @@ TEST(TrackingTest, AllocationsLeftWithStacks)
 
 TEST(TrackingTest, AllocationsLeftWithoutStacks)
 {
-  tracking_adaptor mr{rmm::mr::get_current_device_resource_ref()};
+  tracking_adaptor mr{rmm::mr::get_current_device_resource()};
   std::vector<void*> allocations;
   allocations.reserve(num_allocations);
   for (int i = 0; i < num_allocations; ++i) {
@@ -147,7 +147,7 @@ TEST(TrackingTest, MultiTracking)
 {
   // Test stacking multiple tracking adaptors, using explicit resource refs
   // to avoid lifetime issues with the global device resource map
-  auto orig_device_resource = rmm::mr::get_current_device_resource_ref();
+  auto orig_device_resource = rmm::mr::get_current_device_resource();
   tracking_adaptor mr{orig_device_resource, true};
 
   std::vector<std::shared_ptr<rmm::device_buffer>> allocations;
@@ -191,7 +191,7 @@ TEST(TrackingTest, NegativeInnerTracking)
   // This tests the unlikely scenario where pointers are deallocated on an inner
   // wrapped memory resource. This can happen if the MR is not saved with the
   // memory pointer
-  tracking_adaptor mr{rmm::mr::get_current_device_resource_ref()};
+  tracking_adaptor mr{rmm::mr::get_current_device_resource()};
   std::vector<void*> allocations;
   for (std::size_t i = 0; i < num_allocations; ++i) {
     allocations.push_back(mr.allocate_sync(ten_MiB));
@@ -223,7 +223,7 @@ TEST(TrackingTest, NegativeInnerTracking)
 
 TEST(TrackingTest, DeallocWrongBytes)
 {
-  tracking_adaptor mr{rmm::mr::get_current_device_resource_ref()};
+  tracking_adaptor mr{rmm::mr::get_current_device_resource()};
   std::vector<void*> allocations;
   for (std::size_t i = 0; i < num_allocations; ++i) {
     allocations.push_back(mr.allocate_sync(ten_MiB));
@@ -249,7 +249,7 @@ TEST(TrackingTest, LogOutstandingAllocations)
   auto old_level = rmm::default_logger().level();
   rmm::default_logger().sinks().push_back(oss_sink);
 
-  tracking_adaptor mr{rmm::mr::get_current_device_resource_ref()};
+  tracking_adaptor mr{rmm::mr::get_current_device_resource()};
   std::vector<void*> allocations;
   for (std::size_t i = 0; i < num_allocations; ++i) {
     allocations.push_back(mr.allocate_sync(ten_MiB));

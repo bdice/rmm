@@ -13,7 +13,7 @@
 namespace rmm::test {
 
 struct StatisticsMRFixture : public ::testing::Test {
-  rmm::mr::statistics_resource_adaptor mr{rmm::mr::get_current_device_resource_ref()};
+  rmm::mr::statistics_resource_adaptor mr{rmm::mr::get_current_device_resource()};
   rmm::device_async_resource_ref ref{mr};
   rmm::cuda_stream stream{};
 };
