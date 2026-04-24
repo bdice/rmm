@@ -22,15 +22,16 @@ namespace RMM_EXPORT rmm {
  * undefined behavior: the primary context may already be destroyed, and CUDA API calls may
  * dereference released state and crash inside libcuda rather than returning an error.
  *
- * All RMM memory resources must be safe to destroy at process shutdown. An MR destructor may
- * run during normal program flow (when calling CUDA APIs is safe) or after `exit()` has been
- * called (when it is not). Authors must satisfy this by either:
+ * Use this function from a destructor (or a helper invoked by a destructor, such as a
+ * `release()` method) when the object may be destroyed during process termination. In that
+ * case the destructor may run after the CUDA primary context has been destroyed, and calling
+ * into the CUDA runtime is undefined behavior. Destructors can avoid that by:
  *
  * 1. Never calling CUDA APIs from the destructor at all, or
  * 2. Consulting `rmm::process_is_exiting()` in the destructor (and in any helper invoked by
  *    the destructor, such as a `release()` method) and skipping CUDA API calls when it
- *    returns `true`. In that case, resources that would have been explicitly released should
- *    simply be leaked; the OS reclaims them when the process exits.
+ *    returns `true`. In that case, resources that would have been explicitly released should be
+ *    leaked; the OS reclaims them when the process exits.
  *
  * Calling `rmm::process_is_exiting()` from a resource destructor is always safe: it performs a
  * single atomic load (acquire semantics) and never calls into CUDA.

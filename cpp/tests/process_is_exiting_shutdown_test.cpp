@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <rmm/detail/runtime_shutdown.hpp>
+#include <rmm/mr/per_device_resource.hpp>
 #include <rmm/process_is_exiting.hpp>
 
 #include <cstdlib>
@@ -20,10 +20,11 @@
  * via std::atexit on first use; it is called from get_ref_map() immediately after the static
  * map is constructed, so the flag is observed as true during that map's destructor.
  *
- * This binary exercises the same mechanism without any per-device map or CUDA involvement:
+ * This binary exercises the real integration point without any CUDA involvement:
  *
  *   1. main() registers `checker` via std::atexit FIRST.
- *   2. main() then calls register_process_exit_hook(), which registers its internal
+ *   2. main() then calls detail::get_ref_map(). This constructs the static per-device map and,
+ *      immediately afterward, calls register_process_exit_hook(), which registers the internal
  *      flag-setter via std::atexit SECOND.
  *   3. main() returns 0.
  *   4. At termination, atexit handlers run in LIFO order: first the flag-setter (sets the
@@ -45,9 +46,9 @@ void checker() noexcept
 
 int main()
 {
-  // Register the checker before rmm's flag-setter so that the checker runs AFTER the
-  // flag-setter at termination.
+  // Register the checker before get_ref_map() so that the checker runs AFTER the flag-setter at
+  // termination.
   if (std::atexit(checker) != 0) { return 2; }
-  rmm::detail::register_process_exit_hook();
+  [[maybe_unused]] auto& map = rmm::mr::detail::get_ref_map();
   return 0;
 }
