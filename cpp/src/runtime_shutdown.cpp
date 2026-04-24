@@ -8,35 +8,26 @@
 
 #include <atomic>
 #include <cstdlib>
+#include <mutex>
 
 namespace RMM_NAMESPACE {
 
 namespace {
 
-std::atomic<bool>& exiting_flag() noexcept
-{
-  static std::atomic<bool> flag{false};
-  return flag;
-}
+std::atomic<bool> exiting{false};
+std::once_flag registered;
 
 }  // namespace
 
-bool process_is_exiting() noexcept { return exiting_flag().load(std::memory_order_acquire); }
+bool process_is_exiting() noexcept { return exiting.load(std::memory_order_acquire); }
 
 namespace detail {
 
 void register_process_exit_hook() noexcept
 {
-  // The C++ standard guarantees that if a static object's construction is sequenced-before a
-  // call to std::atexit, the atexit callback runs before that object's destructor at
-  // termination (see https://en.cppreference.com/cpp/utility/program/exit). Callers must
-  // therefore invoke this function after constructing the static object whose destructor needs
-  // to observe the exit flag.
-  static std::atomic<bool> registered{false};
-  bool expected = false;
-  if (registered.compare_exchange_strong(expected, true, std::memory_order_acq_rel)) {
-    std::atexit([]() noexcept { exiting_flag().store(true, std::memory_order_release); });
-  }
+  std::call_once(registered, []() {
+    std::atexit([]() noexcept { exiting.store(true, std::memory_order_release); });
+  });
 }
 
 }  // namespace detail

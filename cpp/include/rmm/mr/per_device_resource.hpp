@@ -77,10 +77,9 @@ RMM_EXPORT inline auto& get_ref_map()
 {
   static std::map<cuda_device_id::value_type, cuda::mr::any_resource<cuda::mr::device_accessible>>
     device_id_to_resource;
-  // The map's destructor may run owning resources' destructors during process exit, when calling
-  // into the CUDA runtime is undefined behavior. Register the process-exit hook here, right after
-  // the map is constructed: the C++ standard guarantees that an atexit callback registered after
-  // a static object's construction runs before that object's destructor at termination.
+  // Register the process-exit hook immediately after constructing the map. The C++ standard
+  // guarantees that an atexit callback registered after a static object's construction runs
+  // before that object's destructor at termination.
   rmm::detail::register_process_exit_hook();
   return device_id_to_resource;
 }
