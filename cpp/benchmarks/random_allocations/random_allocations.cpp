@@ -7,6 +7,7 @@
 #include <rmm/cuda_device.hpp>
 #include <rmm/mr/arena_memory_resource.hpp>
 #include <rmm/mr/binning_memory_resource.hpp>
+#include <rmm/mr/caching_memory_resource.hpp>
 #include <rmm/mr/cuda_async_memory_resource.hpp>
 #include <rmm/mr/cuda_memory_resource.hpp>
 #include <rmm/mr/per_device_resource.hpp>
@@ -161,6 +162,11 @@ inline any_device_resource make_pool()
                                        rmm::percent_of_free_device_memory(50)};
 }
 
+inline any_device_resource make_caching()
+{
+  return rmm::mr::caching_memory_resource{rmm::mr::cuda_memory_resource{}};
+}
+
 inline any_device_resource make_arena()
 {
   auto free = rmm::available_device_memory().first;
@@ -253,6 +259,9 @@ void declare_benchmark(std::string const& name)
   } else if (name == "pool") {
     BENCHMARK_CAPTURE(BM_RandomAllocations, pool_mr, &make_pool)  // NOLINT
       ->Apply(benchmark_range);
+  } else if (name == "caching") {
+    BENCHMARK_CAPTURE(BM_RandomAllocations, caching_mr, &make_caching)  // NOLINT
+      ->Apply(benchmark_range);
   } else if (name == "arena") {
     BENCHMARK_CAPTURE(BM_RandomAllocations, arena_mr, &make_arena)  // NOLINT
       ->Apply(benchmark_range);
@@ -304,6 +313,7 @@ int main(int argc, char** argv)
     if (args.count("profile") > 0) {
       std::map<std::string, MRFactoryFunc> const funcs({{"arena", &make_arena},
                                                         {"binning", &make_binning},
+                                                        {"caching", &make_caching},
                                                         {"cuda", &make_cuda},
                                                         {"cuda_async", &make_cuda_async},
                                                         {"pool", &make_pool}});
@@ -329,7 +339,7 @@ int main(int argc, char** argv)
         std::string mr_name = args["resource"].as<std::string>();
         declare_benchmark(mr_name);
       } else {
-        std::vector<std::string> mrs{"pool", "binning", "arena", "cuda_async", "cuda"};
+        std::vector<std::string> mrs{"pool", "caching", "binning", "arena", "cuda_async", "cuda"};
         std::for_each(
           std::cbegin(mrs), std::cend(mrs), [](auto const& mr) { declare_benchmark(mr); });
       }
