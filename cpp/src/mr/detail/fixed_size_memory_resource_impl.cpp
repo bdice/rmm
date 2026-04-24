@@ -94,14 +94,11 @@ void fixed_size_memory_resource_impl::release()
 {
   lock_guard lock(this->get_mutex());
 
-  // During process exit, calling into CUDA (even via the upstream resource) is undefined
-  // behavior once the primary context has been destroyed. Leak upstream blocks in that case;
-  // the OS reclaims them when the process exits. See rmm/process_is_exiting.hpp.
-  if (!rmm::process_is_exiting()) {
-    for (auto block : upstream_blocks_) {
-      upstream_mr_.deallocate_sync(
-        block.pointer(), upstream_chunk_size_, rmm::CUDA_ALLOCATION_ALIGNMENT);
-    }
+  if (rmm::process_is_exiting()) { return; }
+
+  for (auto block : upstream_blocks_) {
+    upstream_mr_.deallocate_sync(
+      block.pointer(), upstream_chunk_size_, rmm::CUDA_ALLOCATION_ALIGNMENT);
   }
   upstream_blocks_.clear();
 }

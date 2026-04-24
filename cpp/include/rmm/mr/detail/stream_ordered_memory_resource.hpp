@@ -487,16 +487,11 @@ class stream_ordered_memory_resource : public crtp<PoolResource> {
   {
     lock_guard lock(mtx_);
 
-    // This destructor can run from a static destructor after the CUDA primary context has been
-    // destroyed (e.g., when an owning MR is held in the static per-device resource map).
-    // Calling into the CUDA runtime after exit() has begun is undefined behavior: the driver
-    // may dereference destroyed context state and crash inside libcuda rather than returning
-    // an error. In that case, leak the events; the OS reclaims them when the process exits.
-    if (!rmm::process_is_exiting()) {
-      for (auto s_e : stream_events_) {
-        RMM_ASSERT_CUDA_SUCCESS_SAFE_SHUTDOWN(cudaEventSynchronize(s_e.second.event));
-        RMM_ASSERT_CUDA_SUCCESS_SAFE_SHUTDOWN(cudaEventDestroy(s_e.second.event));
-      }
+    if (rmm::process_is_exiting()) { return; }
+
+    for (auto s_e : stream_events_) {
+      RMM_ASSERT_CUDA_SUCCESS_SAFE_SHUTDOWN(cudaEventSynchronize(s_e.second.event));
+      RMM_ASSERT_CUDA_SUCCESS_SAFE_SHUTDOWN(cudaEventDestroy(s_e.second.event));
     }
 
     stream_events_.clear();
