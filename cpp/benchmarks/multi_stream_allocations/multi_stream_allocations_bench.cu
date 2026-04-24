@@ -9,6 +9,7 @@
 #include <rmm/device_uvector.hpp>
 #include <rmm/mr/arena_memory_resource.hpp>
 #include <rmm/mr/binning_memory_resource.hpp>
+#include <rmm/mr/caching_memory_resource.hpp>
 #include <rmm/mr/cuda_async_memory_resource.hpp>
 #include <rmm/mr/cuda_memory_resource.hpp>
 #include <rmm/mr/per_device_resource.hpp>
@@ -94,6 +95,11 @@ inline any_device_resource make_pool()
                                        rmm::percent_of_free_device_memory(50)};
 }
 
+inline any_device_resource make_caching()
+{
+  return rmm::mr::caching_memory_resource{rmm::mr::cuda_memory_resource{}};
+}
+
 inline any_device_resource make_arena()
 {
   return rmm::mr::arena_memory_resource{rmm::mr::get_current_device_resource_ref()};
@@ -122,6 +128,7 @@ MRFactoryFunc get_mr_factory(std::string const& resource_name)
   if (resource_name == "cuda") { return &make_cuda; }
   if (resource_name == "cuda_async") { return &make_cuda_async; }
   if (resource_name == "pool") { return &make_pool; }
+  if (resource_name == "caching") { return &make_caching; }
   if (resource_name == "arena") { return &make_arena; }
   if (resource_name == "binning") { return &make_binning; }
 
@@ -144,6 +151,12 @@ void declare_benchmark(std::string const& name)
 
   if (name == "pool") {
     BENCHMARK_CAPTURE(BM_MultiStreamAllocations, pool_mr, &make_pool)  //
+      ->Apply(benchmark_range);
+    return;
+  }
+
+  if (name == "caching") {
+    BENCHMARK_CAPTURE(BM_MultiStreamAllocations, caching_mr, &make_caching)  //
       ->Apply(benchmark_range);
     return;
   }
@@ -231,6 +244,7 @@ int main(int argc, char** argv)
         resource_names.emplace_back("cuda");
         resource_names.emplace_back("cuda_async");
         resource_names.emplace_back("pool");
+        resource_names.emplace_back("caching");
         resource_names.emplace_back("arena");
         resource_names.emplace_back("binning");
       }
