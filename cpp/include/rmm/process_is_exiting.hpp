@@ -17,10 +17,11 @@ namespace RMM_EXPORT rmm {
 /**
  * @brief Returns `true` if the process has entered `exit()` / atexit handler execution.
  *
- * Destructors of static objects, as well as atexit handlers registered by other DSOs, can run
- * after `main()` has returned. At that point calling into the CUDA runtime or driver is
- * undefined behavior: the primary context may already be destroyed, and CUDA API calls may
- * dereference released state and crash inside libcuda rather than returning an error.
+ * Destructors of static objects, as well as atexit handlers registered by other DSOs, run
+ * during process termination after `main()` has returned. At that point calling into the CUDA
+ * runtime or driver is undefined behavior: the primary context may already be destroyed, and
+ * CUDA API calls may dereference released state and crash inside libcuda rather than returning
+ * an error.
  *
  * Use this function from a destructor (or a helper invoked by a destructor, such as a
  * `release()` method) when the object may be destroyed during process termination. In that
@@ -32,6 +33,11 @@ namespace RMM_EXPORT rmm {
  *    the destructor, such as a `release()` method) and skipping CUDA API calls when it
  *    returns `true`. In that case, resources that would have been explicitly released should be
  *    leaked; the OS reclaims them when the process exits.
+ *
+ * Storing RMM objects with static or thread-local scope is otherwise unsupported. The intended
+ * use of this facility is for resources owned by RMM's internal per-device resource map; users
+ * should not create their own static containers of RMM objects and rely on
+ * `rmm::process_is_exiting()` to make those destructors safe.
  *
  * Calling `rmm::process_is_exiting()` from a resource destructor is always safe: it performs a
  * single atomic load (acquire semantics) and never calls into CUDA.
