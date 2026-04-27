@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <rmm/detail/error.hpp>
 #include <rmm/detail/runtime_shutdown.hpp>
 #include <rmm/process_is_exiting.hpp>
 
@@ -26,7 +27,9 @@ namespace detail {
 void register_process_exit_hook() noexcept
 {
   std::call_once(registered, []() {
-    std::atexit([]() noexcept { exiting.store(true, std::memory_order_release); });
+    auto const registration_status =
+      std::atexit([]() noexcept { exiting.store(true, std::memory_order_release); });
+    RMM_EXPECTS(registration_status == 0, "Unable to register process-exit hook");
   });
 }
 
