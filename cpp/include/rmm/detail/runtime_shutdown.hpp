@@ -12,7 +12,9 @@ namespace detail {
 /**
  * @brief Register the atexit callback that flips the flag observed by `rmm::process_is_exiting()`.
  *
- * Idempotent: safe to call from multiple places; only the first call registers the callback.
+ * This registers the single process-exit hook used to make resources held in RMM's internal
+ * per-device resource map safe to destruct during process termination. It is not a general
+ * per-static-object registration facility.
  */
 RMM_EXPORT void register_process_exit_hook() noexcept;
 

@@ -10,15 +10,8 @@
 
 /*
  * Standalone test that verifies rmm::process_is_exiting() reports true while the C runtime is
- * executing atexit handlers. The fix in rapidsai/rmm#2367 depends on this behavior: resource
- * destructors running during exit() must observe the flag as set so that they can skip CUDA
- * calls.
- *
- * The C++ standard guarantees that if the completion of the initialization of a static object A
- * is sequenced-before a call to std::atexit(F), then F runs before A's destructor at
- * termination. RMM exploits this by having register_process_exit_hook() register a flag-setter
- * via std::atexit on first use; it is called from get_ref_map() immediately after the static
- * map is constructed, so the flag is observed as true during that map's destructor.
+ * executing atexit handlers. Resource destructors running during exit() must observe the flag
+ * as set so that they can skip CUDA calls.
  *
  * This binary exercises the real integration point without any CUDA involvement:
  *
@@ -39,7 +32,11 @@ namespace {
 
 void checker() noexcept
 {
-  if (!rmm::process_is_exiting()) { std::_Exit(1); }
+  if (!rmm::process_is_exiting()) {
+    // The process is already running atexit handlers. Use std::_Exit rather than std::exit to
+    // report failure without re-entering normal termination or running more cleanup.
+    std::_Exit(1);
+  }
 }
 
 }  // namespace

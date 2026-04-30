@@ -26,6 +26,11 @@ namespace detail {
 
 void register_process_exit_hook() noexcept
 {
+  // The C++ standard guarantees that if the completion of the initialization of a static object A
+  // is sequenced-before a call to std::atexit(F), then F runs before A's destructor at
+  // termination. RMM exploits this by registering this flag-setter immediately after the internal
+  // per-device resource map is constructed, so the flag is observed as true during that map's
+  // destructor.
   std::call_once(registered, []() {
     auto const registration_status =
       std::atexit([]() noexcept { exiting.store(true, std::memory_order_release); });
