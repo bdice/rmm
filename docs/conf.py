@@ -128,12 +128,6 @@ html_theme_options = {
             "icon": "fa-brands fa-github",
             "type": "fontawesome",
         },
-        {
-            "name": "X",
-            "url": "https://x.com/rapidsai",
-            "icon": "fa-brands fa-x-twitter",
-            "type": "fontawesome",
-        },
     ],
     "show_toc_level": 1,
     "navbar_align": "right",
