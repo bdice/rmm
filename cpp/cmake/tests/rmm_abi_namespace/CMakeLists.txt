@@ -15,7 +15,7 @@ if(NOT RMM_REPOSITORY_DIR)
   cmake_path(SET RMM_REPOSITORY_DIR NORMALIZE "${CMAKE_CURRENT_LIST_DIR}/../../../..")
 endif()
 
-# Normalize a two-digit RAPIDS version component for use in a C++ identifier.
+# Normalize a two-digit RMM version component for use in a C++ identifier.
 function(normalize_version_component input output)
   string(REGEX REPLACE "^0+" "" normalized "${input}")
   if(normalized STREQUAL "")
@@ -32,10 +32,10 @@ if(NOT current_rmm_version MATCHES "^([0-9]+)\\.([0-9]+)\\.")
 endif()
 normalize_version_component("${CMAKE_MATCH_1}" current_rmm_version_major)
 normalize_version_component("${CMAKE_MATCH_2}" current_rmm_version_minor)
-set(current_rmm_abi_namespace "_RAPIDS_${current_rmm_version_major}_${current_rmm_version_minor}")
+set(current_rmm_abi_namespace "_RMM_${current_rmm_version_major}_${current_rmm_version_minor}")
 
 set(previous_rmm_version "26.06.00")
-set(previous_rmm_abi_namespace "_RAPIDS_26_6")
+set(previous_rmm_abi_namespace "_RMM_26_6")
 if(current_rmm_abi_namespace STREQUAL previous_rmm_abi_namespace)
   message(FATAL_ERROR "The current and previous test ABI namespaces must be different")
 endif()

@@ -148,7 +148,7 @@ dependencies.
 
 ### ABI versioning
 
-RMM symbols are placed in an inline namespace derived from the RAPIDS major and minor version. The
+RMM symbols are placed in an inline namespace derived from the RMM major and minor version. The
 public API remains available through the `rmm::` namespace, while static RMM libraries built for
 different ABI versions can coexist in one process. Process-global state is shared by RMM copies
 with the same ABI version and kept separate across different ABI versions.
