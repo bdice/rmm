@@ -170,8 +170,8 @@ latex_documents = [
     (
         master_doc,
         "rmm.tex",
-        "RMM Documentation",
-        "NVIDIA Corporation",
+        f"{project} Documentation",
+        author,
         "manual",
     )
 ]
@@ -181,7 +181,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "rmm", "RMM Documentation", [author], 1)]
+man_pages = [(master_doc, "rmm", f"{project} Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output -------------------------------------------
@@ -193,7 +193,7 @@ texinfo_documents = [
     (
         master_doc,
         "rmm",
-        "RMM Documentation",
+        f"{project} Documentation",
         author,
         "rmm",
         "One line description of project.",
