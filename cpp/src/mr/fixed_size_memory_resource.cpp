@@ -7,7 +7,7 @@
 
 #include <cstddef>
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace mr {
 
 fixed_size_memory_resource::fixed_size_memory_resource(
@@ -30,4 +30,4 @@ std::size_t fixed_size_memory_resource::get_block_size() const noexcept
 }
 
 }  // namespace mr
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

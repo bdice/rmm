@@ -8,7 +8,7 @@
 #include <rmm/detail/format.hpp>
 #include <rmm/mr/detail/limiting_resource_adaptor_impl.hpp>
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace mr {
 namespace detail {
 
@@ -81,4 +81,4 @@ void limiting_resource_adaptor_impl::deallocate_sync(void* ptr,
 
 }  // namespace detail
 }  // namespace mr
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

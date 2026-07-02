@@ -15,7 +15,7 @@
 #include <new>
 #include <string>
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace mr {
 namespace detail {
 
@@ -94,4 +94,4 @@ bool system_memory_resource::operator!=(system_memory_resource const&) const noe
 }
 
 }  // namespace mr
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

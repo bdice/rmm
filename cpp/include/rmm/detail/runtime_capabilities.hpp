@@ -12,7 +12,7 @@
 
 #include <dlfcn.h>
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace detail {
 
 /**
@@ -174,4 +174,4 @@ struct device_integrated_memory {
 };
 
 }  // namespace detail
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

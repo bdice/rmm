@@ -13,7 +13,7 @@
 #include <cstddef>
 #include <optional>
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace mr {
 /**
  * @addtogroup memory_resources
@@ -83,4 +83,4 @@ static_assert(cuda::mr::resource_with<pool_memory_resource, cuda::mr::device_acc
 
 /** @} */  // end of group
 }  // namespace mr
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

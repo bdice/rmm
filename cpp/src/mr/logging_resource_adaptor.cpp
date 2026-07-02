@@ -11,7 +11,7 @@
 #include <memory>
 #include <string>
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace mr {
 
 namespace {
@@ -78,4 +78,4 @@ std::string logging_resource_adaptor::get_default_filename()
 }
 
 }  // namespace mr
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

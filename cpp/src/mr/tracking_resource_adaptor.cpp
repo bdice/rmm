@@ -9,7 +9,7 @@
 #include <map>
 #include <string>
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace mr {
 
 tracking_resource_adaptor::tracking_resource_adaptor(
@@ -46,4 +46,4 @@ void tracking_resource_adaptor::log_outstanding_allocations() const
 }
 
 }  // namespace mr
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

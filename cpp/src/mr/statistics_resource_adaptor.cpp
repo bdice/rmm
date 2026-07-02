@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <utility>
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace mr {
 
 statistics_resource_adaptor::statistics_resource_adaptor(
@@ -47,4 +47,4 @@ statistics_resource_adaptor::pop_counters()
 }
 
 }  // namespace mr
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

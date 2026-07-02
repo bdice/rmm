@@ -12,7 +12,7 @@
 #include <sstream>
 #include <string>
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace detail {
 
 // Stringify a size in bytes to a human-readable value
@@ -39,4 +39,4 @@ inline std::string format_stream(rmm::cuda_stream_view stream)
 }
 
 }  // namespace detail
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

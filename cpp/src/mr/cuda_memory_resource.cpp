@@ -11,7 +11,7 @@
 
 #include <cstddef>
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace mr {
 
 void* cuda_memory_resource::allocate([[maybe_unused]] cuda::stream_ref stream,
@@ -54,4 +54,4 @@ bool cuda_memory_resource::operator==(cuda_memory_resource const&) const noexcep
 bool cuda_memory_resource::operator!=(cuda_memory_resource const&) const noexcept { return false; }
 
 }  // namespace mr
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

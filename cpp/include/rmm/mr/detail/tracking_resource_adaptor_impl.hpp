@@ -17,7 +17,7 @@
 #include <shared_mutex>
 #include <string>
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace mr {
 namespace detail {
 
@@ -115,4 +115,4 @@ class tracking_resource_adaptor_impl {
 
 }  // namespace detail
 }  // namespace mr
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

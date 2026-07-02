@@ -22,7 +22,7 @@
 #include <iostream>
 #endif
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace mr {
 namespace detail {
 
@@ -133,4 +133,4 @@ void fixed_size_memory_resource_impl::print()
 
 }  // namespace detail
 }  // namespace mr
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

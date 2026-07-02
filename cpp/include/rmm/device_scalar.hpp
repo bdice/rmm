@@ -13,7 +13,7 @@
 
 #include <type_traits>
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 /**
  * @addtogroup data_containers
  * @{
@@ -268,4 +268,4 @@ class device_scalar {
 };
 
 /** @} */  // end of group
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

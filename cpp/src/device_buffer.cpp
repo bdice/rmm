@@ -12,7 +12,7 @@
 
 #include <memory>
 
-namespace rmm {
+RMM_NAMESPACE_BEGIN
 
 device_buffer::device_buffer() : _mr{rmm::mr::get_current_device_resource_ref()} {}
 
@@ -183,4 +183,4 @@ void device_buffer::shrink_to_fit(cuda_stream_view stream)
   }
 }
 
-}  // namespace rmm
+RMM_NAMESPACE_END

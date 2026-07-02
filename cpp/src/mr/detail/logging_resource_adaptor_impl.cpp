@@ -8,7 +8,7 @@
 #include <rmm/detail/format.hpp>
 #include <rmm/mr/detail/logging_resource_adaptor_impl.hpp>
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace mr {
 namespace detail {
 
@@ -84,4 +84,4 @@ std::string logging_resource_adaptor_impl::header() const
 
 }  // namespace detail
 }  // namespace mr
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

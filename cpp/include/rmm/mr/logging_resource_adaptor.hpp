@@ -14,7 +14,7 @@
 #include <ostream>
 #include <string>
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace mr {
 
 /**
@@ -137,4 +137,4 @@ static_assert(cuda::mr::resource_with<logging_resource_adaptor, cuda::mr::device
 
 /** @} */  // end of group
 }  // namespace mr
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

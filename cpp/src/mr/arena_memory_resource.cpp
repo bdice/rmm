@@ -5,7 +5,7 @@
 
 #include <rmm/mr/arena_memory_resource.hpp>
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace mr {
 
 arena_memory_resource::arena_memory_resource(
@@ -18,4 +18,4 @@ arena_memory_resource::arena_memory_resource(
 }
 
 }  // namespace mr
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

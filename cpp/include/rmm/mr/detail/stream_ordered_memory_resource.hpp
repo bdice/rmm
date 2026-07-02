@@ -24,7 +24,7 @@
 #include <iostream>
 #endif
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace mr::detail {
 
 /**
@@ -534,4 +534,4 @@ class stream_ordered_memory_resource : public crtp<PoolResource> {
 };  // namespace detail
 
 }  // namespace mr::detail
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

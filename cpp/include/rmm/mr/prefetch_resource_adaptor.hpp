@@ -12,7 +12,7 @@
 
 #include <cstddef>
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace mr {
 /**
  * @addtogroup memory_resource_adaptors
@@ -59,4 +59,4 @@ static_assert(cuda::mr::resource_with<prefetch_resource_adaptor, cuda::mr::devic
 
 /** @} */  // end of group
 }  // namespace mr
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

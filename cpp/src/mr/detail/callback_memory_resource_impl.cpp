@@ -7,7 +7,7 @@
 
 #include <utility>
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace mr {
 namespace detail {
 
@@ -52,4 +52,4 @@ void callback_memory_resource_impl::deallocate_sync(void* ptr,
 
 }  // namespace detail
 }  // namespace mr
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END
