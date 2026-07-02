@@ -22,9 +22,9 @@
 #define RMM_HIDDEN
 #endif
 
-// Place RMM symbols in an inline namespace for the RAPIDS major/minor ABI version. This preserves
+// Place RMM symbols in an inline namespace for the RMM major/minor ABI version. This preserves
 // the rmm:: source-level API while allowing different RMM ABI versions to coexist in one process.
-#define RMM_DETAIL_ABI_NAMESPACE_IMPL(major, minor) _RAPIDS_##major##_##minor
+#define RMM_DETAIL_ABI_NAMESPACE_IMPL(major, minor) _RMM_##major##_##minor
 #define RMM_DETAIL_ABI_NAMESPACE(major, minor)      RMM_DETAIL_ABI_NAMESPACE_IMPL(major, minor)
 #define RMM_ABI_NAMESPACE                           RMM_DETAIL_ABI_NAMESPACE(RMM_VERSION_MAJOR, RMM_VERSION_MINOR)
 
