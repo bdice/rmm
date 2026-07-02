@@ -16,6 +16,9 @@ foreach(required_value IN ITEMS CURRENT_RMM_ABI_NAMESPACE PREVIOUS_RMM_ABI_NAMES
     message(FATAL_ERROR "${required_value} must not be empty")
   endif()
 endforeach()
+if(CURRENT_RMM_ABI_NAMESPACE STREQUAL PREVIOUS_RMM_ABI_NAMESPACE)
+  message(FATAL_ERROR "CURRENT_RMM_ABI_NAMESPACE and PREVIOUS_RMM_ABI_NAMESPACE must differ")
+endif()
 
 # Read demangled ELF symbols from library into output_variable.
 function(read_symbols library output_variable)
