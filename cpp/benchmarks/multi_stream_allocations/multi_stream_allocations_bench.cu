@@ -41,6 +41,29 @@ __global__ void compute_bound_kernel(int64_t* out)
 using any_device_resource = cuda::mr::any_resource<cuda::mr::device_accessible>;
 using MRFactoryFunc       = std::function<any_device_resource()>;
 
+rmm::mr::caching_memory_resource_pool_policy caching_pool_policy =
+  rmm::mr::caching_memory_resource_pool_policy::separate;
+rmm::mr::caching_memory_resource_stream_reuse_policy caching_stream_policy =
+  rmm::mr::caching_memory_resource_stream_reuse_policy::same_stream;
+
+rmm::mr::caching_memory_resource_pool_policy parse_pool_policy(std::string const& policy)
+{
+  if (policy == "separate") { return rmm::mr::caching_memory_resource_pool_policy::separate; }
+  if (policy == "unified") { return rmm::mr::caching_memory_resource_pool_policy::unified; }
+  RMM_FAIL("Invalid caching pool policy: " + policy);
+}
+
+rmm::mr::caching_memory_resource_stream_reuse_policy parse_stream_policy(std::string const& policy)
+{
+  if (policy == "same_stream") {
+    return rmm::mr::caching_memory_resource_stream_reuse_policy::same_stream;
+  }
+  if (policy == "cross_stream") {
+    return rmm::mr::caching_memory_resource_stream_reuse_policy::cross_stream;
+  }
+  RMM_FAIL("Invalid caching stream reuse policy: " + policy);
+}
+
 static void run_prewarm(rmm::cuda_stream_pool& stream_pool, rmm::device_async_resource_ref mr)
 {
   auto buffers = std::vector<rmm::device_uvector<int64_t>>();
@@ -93,7 +116,12 @@ inline any_device_resource make_pool()
 
 inline any_device_resource make_caching()
 {
-  return rmm::mr::caching_memory_resource{rmm::mr::cuda_memory_resource{}};
+  return rmm::mr::caching_memory_resource{
+    rmm::mr::cuda_memory_resource{},
+    std::nullopt,
+    rmm::mr::caching_memory_resource_oom_fallback_policy::release_oversized_then_all,
+    caching_pool_policy,
+    caching_stream_policy};
 }
 
 inline any_device_resource make_arena()
@@ -218,8 +246,19 @@ int main(int argc, char** argv)
       "w,warm",
       "Ensure each stream has enough memory to satisfy allocations.",
       cxxopts::value<bool>()->default_value("false"));
+    options.add_options()(  //
+      "pool-policy",
+      "Caching MR pool policy: separate or unified",
+      cxxopts::value<std::string>()->default_value("separate"));
+    options.add_options()(  //
+      "stream-policy",
+      "Caching MR stream reuse policy: same_stream or cross_stream",
+      cxxopts::value<std::string>()->default_value("same_stream"));
 
     auto args = options.parse(argc, argv);
+
+    caching_pool_policy   = parse_pool_policy(args["pool-policy"].as<std::string>());
+    caching_stream_policy = parse_stream_policy(args["stream-policy"].as<std::string>());
 
     if (args.count("profile") > 0) {
       auto resource_name = args["resource"].as<std::string>();

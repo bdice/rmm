@@ -220,6 +220,8 @@ Status: Implemented with `caching_memory_resource_pool_policy`.
 
 ### Step 4: Benchmark Mixed Allocations
 
+Status: Benchmark binaries accept caching pool and stream policy options. Report generation is available through `cpp/benchmarks/caching_allocator_reports.py`.
+
 - Build mixed small/large allocation benchmark coverage.
 - Compare `pool_policy::separate` and `pool_policy::unified`.
 - Write Markdown reports under `caching-allocator-reports/`.
@@ -230,6 +232,8 @@ Status: Implemented with `caching_memory_resource_stream_reuse_policy`.
 
 - After pool behavior is explicit, add stream policy tests and implementation.
 - Benchmark multi-stream churn for `stream_reuse_policy::same_stream` versus `stream_reuse_policy::cross_stream`.
+
+Benchmark reports are generated but intentionally ignored by git.
 
 ## OOM Fallback Options
 
