@@ -15,11 +15,12 @@
 namespace rmm::test {
 namespace {
 
-using caching_mr  = rmm::mr::caching_memory_resource;
-using cuda_mr     = rmm::mr::cuda_memory_resource;
-using limiting_mr = rmm::mr::limiting_resource_adaptor;
-using oom_policy  = rmm::mr::caching_memory_resource_oom_fallback_policy;
-using pool_policy = rmm::mr::caching_memory_resource_pool_policy;
+using caching_mr    = rmm::mr::caching_memory_resource;
+using cuda_mr       = rmm::mr::cuda_memory_resource;
+using limiting_mr   = rmm::mr::limiting_resource_adaptor;
+using oom_policy    = rmm::mr::caching_memory_resource_oom_fallback_policy;
+using pool_policy   = rmm::mr::caching_memory_resource_pool_policy;
+using stream_policy = rmm::mr::caching_memory_resource_stream_reuse_policy;
 
 TEST(CachingMemoryResourceTest, UpstreamSizingPolicy)
 {
@@ -247,7 +248,11 @@ TEST(CachingMemoryResourceTest, MaxSplitSizePreventsSplittingLargeBlock)
 
 TEST(CachingMemoryResourceTest, ReusesOtherStreamAllocation)
 {
-  caching_mr mr{rmm::mr::get_current_device_resource_ref()};
+  caching_mr mr{rmm::mr::get_current_device_resource_ref(),
+                std::nullopt,
+                oom_policy::release_oversized_then_all,
+                pool_policy::separate,
+                stream_policy::cross_stream};
   rmm::cuda_stream stream{};
 
   auto* ptr1 = mr.allocate(rmm::cuda_stream_view{stream}, 4096, rmm::CUDA_ALLOCATION_ALIGNMENT);
@@ -258,9 +263,43 @@ TEST(CachingMemoryResourceTest, ReusesOtherStreamAllocation)
   mr.deallocate_sync(ptr2, 4096);
 }
 
-TEST(CachingMemoryResourceTest, ReusesDeletedStreamAllocation)
+TEST(CachingMemoryResourceTest, SameStreamPolicyDoesNotReuseOtherStreamAllocation)
+{
+  cuda_mr cuda;
+  limiting_mr limiter{cuda, 4UL << 20};
+  caching_mr mr{limiter};
+  rmm::cuda_stream stream{};
+
+  auto* ptr1 = mr.allocate(rmm::cuda_stream_view{stream}, 4096, rmm::CUDA_ALLOCATION_ALIGNMENT);
+  mr.deallocate(rmm::cuda_stream_view{stream}, ptr1, 4096, rmm::CUDA_ALLOCATION_ALIGNMENT);
+  stream.synchronize();
+
+  auto* ptr2 = mr.allocate_sync(4096);
+  EXPECT_NE(ptr1, ptr2);
+  EXPECT_EQ(limiter.get_allocated_bytes(), 4UL << 20);
+  mr.deallocate_sync(ptr2, 4096);
+}
+
+TEST(CachingMemoryResourceTest, SameStreamPolicyReusesSameStreamAllocation)
 {
   caching_mr mr{rmm::mr::get_current_device_resource_ref()};
+  rmm::cuda_stream stream{};
+
+  auto* ptr1 = mr.allocate(rmm::cuda_stream_view{stream}, 4096, rmm::CUDA_ALLOCATION_ALIGNMENT);
+  mr.deallocate(rmm::cuda_stream_view{stream}, ptr1, 4096, rmm::CUDA_ALLOCATION_ALIGNMENT);
+  auto* ptr2 = mr.allocate(rmm::cuda_stream_view{stream}, 4096, rmm::CUDA_ALLOCATION_ALIGNMENT);
+
+  EXPECT_EQ(ptr1, ptr2);
+  mr.deallocate(rmm::cuda_stream_view{stream}, ptr2, 4096, rmm::CUDA_ALLOCATION_ALIGNMENT);
+}
+
+TEST(CachingMemoryResourceTest, ReusesDeletedStreamAllocation)
+{
+  caching_mr mr{rmm::mr::get_current_device_resource_ref(),
+                std::nullopt,
+                oom_policy::release_oversized_then_all,
+                pool_policy::separate,
+                stream_policy::cross_stream};
 
   void* ptr1{};
   {

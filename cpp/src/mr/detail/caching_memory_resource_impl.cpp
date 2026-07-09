@@ -18,11 +18,13 @@ caching_memory_resource_impl::caching_memory_resource_impl(
   cuda::mr::any_resource<cuda::mr::device_accessible> upstream,
   std::optional<std::size_t> max_split_size,
   caching_memory_resource_oom_fallback_policy oom_fallback_policy,
-  caching_memory_resource_pool_policy pool_policy)
+  caching_memory_resource_pool_policy pool_policy,
+  caching_memory_resource_stream_reuse_policy stream_reuse_policy)
   : upstream_mr_{std::move(upstream)},
     max_split_size_{max_split_size},
     oom_fallback_policy_{oom_fallback_policy},
-    pool_policy_{pool_policy}
+    pool_policy_{pool_policy},
+    stream_reuse_policy_{stream_reuse_policy}
 {
 }
 
@@ -68,6 +70,11 @@ std::size_t caching_memory_resource_impl::upstream_allocation_size(std::size_t b
   if (bytes <= small_size_threshold) { return small_segment_size; }
   if (bytes < minimum_large_allocation) { return large_segment_size; }
   return rmm::align_up(bytes, large_rounding);
+}
+
+bool caching_memory_resource_impl::supports_cross_stream_reuse() const noexcept
+{
+  return stream_reuse_policy_ == caching_memory_resource_stream_reuse_policy::cross_stream;
 }
 
 std::size_t caching_memory_resource_impl::get_maximum_allocation_size() const

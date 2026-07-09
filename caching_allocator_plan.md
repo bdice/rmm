@@ -226,6 +226,8 @@ Status: Implemented with `caching_memory_resource_pool_policy`.
 
 ### Step 5: Revisit Stream Policy
 
+Status: Implemented with `caching_memory_resource_stream_reuse_policy`.
+
 - After pool behavior is explicit, add stream policy tests and implementation.
 - Benchmark multi-stream churn for `stream_reuse_policy::same_stream` versus `stream_reuse_policy::cross_stream`.
 

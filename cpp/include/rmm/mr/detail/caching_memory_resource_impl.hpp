@@ -36,6 +36,14 @@ enum class caching_memory_resource_pool_policy {
   unified,   ///< Any cached segment large enough for a request may be reused.
 };
 
+/**
+ * @brief Policy controlling reuse of cached blocks from streams other than the allocation stream.
+ */
+enum class caching_memory_resource_stream_reuse_policy {
+  same_stream,   ///< Reuse cached blocks from the same stream only.
+  cross_stream,  ///< Reuse cached blocks from other streams by inserting CUDA event waits.
+};
+
 namespace detail {
 
 class caching_memory_resource_impl final
@@ -55,8 +63,9 @@ class caching_memory_resource_impl final
     std::optional<std::size_t> max_split_size = std::nullopt,
     caching_memory_resource_oom_fallback_policy oom_fallback_policy =
       caching_memory_resource_oom_fallback_policy::release_oversized_then_all,
-    caching_memory_resource_pool_policy pool_policy =
-      caching_memory_resource_pool_policy::separate);
+    caching_memory_resource_pool_policy pool_policy = caching_memory_resource_pool_policy::separate,
+    caching_memory_resource_stream_reuse_policy stream_reuse_policy =
+      caching_memory_resource_stream_reuse_policy::same_stream);
 
   ~caching_memory_resource_impl();
 
@@ -83,6 +92,8 @@ class caching_memory_resource_impl final
   [[nodiscard]] std::size_t cached_large_bytes() const noexcept;
 
   [[nodiscard]] std::size_t upstream_allocation_size(std::size_t bytes) const noexcept;
+
+  [[nodiscard]] bool supports_cross_stream_reuse() const noexcept;
 
   RMM_CONSTEXPR_FRIEND void get_property(caching_memory_resource_impl const&,
                                          cuda::mr::device_accessible) noexcept
@@ -135,6 +146,7 @@ class caching_memory_resource_impl final
   std::optional<std::size_t> max_split_size_{};
   caching_memory_resource_oom_fallback_policy oom_fallback_policy_{};
   caching_memory_resource_pool_policy pool_policy_{};
+  caching_memory_resource_stream_reuse_policy stream_reuse_policy_{};
   std::set<segment> upstream_blocks_{};
   std::set<block_type, compare_blocks<block_type>> allocated_blocks_{};
   std::size_t cached_small_bytes_{};

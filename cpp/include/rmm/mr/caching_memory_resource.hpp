@@ -63,14 +63,16 @@ class RMM_EXPORT caching_memory_resource
    * blocks at or above this size will not be split to satisfy smaller requests.
    * @param oom_fallback_policy Policy used after an upstream allocation failure.
    * @param pool_policy Policy controlling cross-pool cached block reuse.
+   * @param stream_reuse_policy Policy controlling cross-stream cached block reuse.
    */
   explicit caching_memory_resource(
     cuda::mr::any_resource<cuda::mr::device_accessible> upstream,
     std::optional<std::size_t> max_split_size = std::nullopt,
     caching_memory_resource_oom_fallback_policy oom_fallback_policy =
       caching_memory_resource_oom_fallback_policy::release_oversized_then_all,
-    caching_memory_resource_pool_policy pool_policy =
-      caching_memory_resource_pool_policy::separate);
+    caching_memory_resource_pool_policy pool_policy = caching_memory_resource_pool_policy::separate,
+    caching_memory_resource_stream_reuse_policy stream_reuse_policy =
+      caching_memory_resource_stream_reuse_policy::same_stream);
 
   /**
    * @briefreturn{rmm::device_async_resource_ref to the upstream resource}

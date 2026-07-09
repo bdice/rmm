@@ -16,6 +16,7 @@
 #include <cuda_runtime_api.h>
 
 #include <algorithm>
+#include <concepts>
 #include <cstddef>
 #include <map>
 #include <mutex>
@@ -407,16 +408,18 @@ class stream_ordered_memory_resource : public crtp<PoolResource> {
     free_list& blocks =
       (iter != stream_free_blocks_.end()) ? iter->second : stream_free_blocks_[stream_event];
 
-    // Try to find an existing block in another stream
-    {
-      block_type const block = get_block_from_other_stream(size, stream_event, blocks, false);
-      if (block.is_valid()) { return block; }
-    }
+    if (cross_stream_reuse_enabled_for_resource()) {
+      // Try to find an existing block in another stream
+      {
+        block_type const block = get_block_from_other_stream(size, stream_event, blocks, false);
+        if (block.is_valid()) { return block; }
+      }
 
-    // no large enough blocks available on other streams, so sync and merge until we find one
-    {
-      block_type const block = get_block_from_other_stream(size, stream_event, blocks, true);
-      if (block.is_valid()) { return block; }
+      // no large enough blocks available on other streams, so sync and merge until we find one
+      {
+        block_type const block = get_block_from_other_stream(size, stream_event, blocks, true);
+        if (block.is_valid()) { return block; }
+      }
     }
 
     log_summary_trace();
@@ -426,6 +429,16 @@ class stream_ordered_memory_resource : public crtp<PoolResource> {
       this->underlying().expand_pool(size, blocks, cuda_stream_view{stream_event.stream});
 
     return allocate_and_insert_remainder(block, size, blocks);
+  }
+
+  [[nodiscard]] bool cross_stream_reuse_enabled_for_resource() const noexcept
+  {
+    if constexpr (requires(PoolResource const& resource) {
+                    { resource.supports_cross_stream_reuse() } -> std::convertible_to<bool>;
+                  }) {
+      return this->underlying().supports_cross_stream_reuse();
+    }
+    return true;
   }
 
   /**
