@@ -18,6 +18,15 @@
 
 namespace RMM_NAMESPACE {
 namespace mr {
+
+/**
+ * @brief Policy used after an upstream allocation fails while growing a caching memory resource.
+ */
+enum class caching_memory_resource_oom_fallback_policy {
+  release_all,                 ///< Release all cached whole segments, then retry.
+  release_oversized_then_all,  ///< Release oversized whole segments first, then all segments.
+};
+
 namespace detail {
 
 class caching_memory_resource_impl final
@@ -32,8 +41,11 @@ class caching_memory_resource_impl final
   static constexpr std::size_t minimum_large_allocation{10UL << 20};
   static constexpr std::size_t large_rounding{2UL << 20};
 
-  caching_memory_resource_impl(cuda::mr::any_resource<cuda::mr::device_accessible> upstream,
-                               std::optional<std::size_t> max_split_size = std::nullopt);
+  caching_memory_resource_impl(
+    cuda::mr::any_resource<cuda::mr::device_accessible> upstream,
+    std::optional<std::size_t> max_split_size = std::nullopt,
+    caching_memory_resource_oom_fallback_policy oom_fallback_policy =
+      caching_memory_resource_oom_fallback_policy::release_oversized_then_all);
 
   ~caching_memory_resource_impl();
 
@@ -102,10 +114,15 @@ class caching_memory_resource_impl final
 
   [[nodiscard]] std::size_t release_pool(bool is_small) noexcept;
 
+  [[nodiscard]] std::size_t release_all_pools() noexcept;
+
+  [[nodiscard]] std::size_t release_oversized_blocks(std::size_t size) noexcept;
+
   block_type block_from_upstream(std::size_t size, cuda_stream_view stream, bool is_small);
 
   cuda::mr::any_resource<cuda::mr::device_accessible> upstream_mr_;
   std::optional<std::size_t> max_split_size_{};
+  caching_memory_resource_oom_fallback_policy oom_fallback_policy_{};
   std::set<segment> upstream_blocks_{};
   std::set<block_type, compare_blocks<block_type>> allocated_blocks_{};
   std::size_t cached_small_bytes_{};

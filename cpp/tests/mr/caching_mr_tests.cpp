@@ -18,6 +18,7 @@ namespace {
 using caching_mr  = rmm::mr::caching_memory_resource;
 using cuda_mr     = rmm::mr::cuda_memory_resource;
 using limiting_mr = rmm::mr::limiting_resource_adaptor;
+using oom_policy  = rmm::mr::caching_memory_resource_oom_fallback_policy;
 
 TEST(CachingMemoryResourceTest, UpstreamSizingPolicy)
 {
@@ -53,6 +54,42 @@ TEST(CachingMemoryResourceTest, ReleasesCachedBlocksOnFailure)
   EXPECT_NO_THROW(large = mr.allocate_sync(22UL << 20));
   EXPECT_EQ(limiter.get_allocated_bytes(), 22UL << 20);
   mr.deallocate_sync(large, 22UL << 20);
+}
+
+TEST(CachingMemoryResourceTest, ReleaseAllFallbackReleasesBothPools)
+{
+  cuda_mr cuda;
+  limiting_mr limiter{cuda, 22UL << 20};
+  caching_mr mr{limiter, 4UL << 20, oom_policy::release_all};
+
+  auto* small = mr.allocate_sync(4096);
+  auto* large = mr.allocate_sync(2UL << 20);
+  mr.deallocate_sync(small, 4096);
+  mr.deallocate_sync(large, 2UL << 20);
+
+  void* ptr{};
+  EXPECT_NO_THROW(ptr = mr.allocate_sync(3UL << 20));
+  EXPECT_EQ(mr.cached_small_bytes(), 0);
+  EXPECT_EQ(limiter.get_allocated_bytes(), 20UL << 20);
+  mr.deallocate_sync(ptr, 3UL << 20);
+}
+
+TEST(CachingMemoryResourceTest, OversizedThenAllFallbackPreservesOtherPool)
+{
+  cuda_mr cuda;
+  limiting_mr limiter{cuda, 22UL << 20};
+  caching_mr mr{limiter, 4UL << 20, oom_policy::release_oversized_then_all};
+
+  auto* small = mr.allocate_sync(4096);
+  auto* large = mr.allocate_sync(2UL << 20);
+  mr.deallocate_sync(small, 4096);
+  mr.deallocate_sync(large, 2UL << 20);
+
+  void* ptr{};
+  EXPECT_NO_THROW(ptr = mr.allocate_sync(3UL << 20));
+  EXPECT_EQ(mr.cached_small_bytes(), 2UL << 20);
+  EXPECT_EQ(limiter.get_allocated_bytes(), 22UL << 20);
+  mr.deallocate_sync(ptr, 3UL << 20);
 }
 
 TEST(CachingMemoryResourceTest, DoesNotReleaseLiveSmallSegment)

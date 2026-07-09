@@ -10,9 +10,10 @@ namespace mr {
 
 caching_memory_resource::caching_memory_resource(
   cuda::mr::any_resource<cuda::mr::device_accessible> upstream,
-  std::optional<std::size_t> max_split_size)
+  std::optional<std::size_t> max_split_size,
+  caching_memory_resource_oom_fallback_policy oom_fallback_policy)
   : shared_base(cuda::mr::make_shared_resource<detail::caching_memory_resource_impl>(
-      std::move(upstream), max_split_size))
+      std::move(upstream), max_split_size, oom_fallback_policy))
 {
 }
 

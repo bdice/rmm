@@ -16,8 +16,11 @@ namespace detail {
 
 caching_memory_resource_impl::caching_memory_resource_impl(
   cuda::mr::any_resource<cuda::mr::device_accessible> upstream,
-  std::optional<std::size_t> max_split_size)
-  : upstream_mr_{std::move(upstream)}, max_split_size_{max_split_size}
+  std::optional<std::size_t> max_split_size,
+  caching_memory_resource_oom_fallback_policy oom_fallback_policy)
+  : upstream_mr_{std::move(upstream)},
+    max_split_size_{max_split_size},
+    oom_fallback_policy_{oom_fallback_policy}
 {
 }
 
@@ -79,7 +82,24 @@ caching_memory_resource_impl::block_type caching_memory_resource_impl::expand_po
   try {
     return block_from_upstream(upstream_size, stream, is_small);
   } catch (rmm::out_of_memory const&) {
-    auto const released = release_pool(is_small);
+    if (oom_fallback_policy_ == caching_memory_resource_oom_fallback_policy::release_all) {
+      auto const released = release_all_pools();
+      if (released == 0) { throw; }
+      return block_from_upstream(upstream_size, stream, is_small);
+    }
+
+    if (release_oversized_blocks(upstream_size) != 0) {
+      auto const block = [&]() {
+        try {
+          return block_from_upstream(upstream_size, stream, is_small);
+        } catch (rmm::out_of_memory const&) {
+          return block_type{};
+        }
+      }();
+      if (block.is_valid()) { return block; }
+    }
+
+    auto const released = release_all_pools();
     if (released == 0) { throw; }
     return block_from_upstream(upstream_size, stream, is_small);
   }
@@ -198,6 +218,49 @@ std::size_t caching_memory_resource_impl::release_pool(bool is_small) noexcept
       cached_small_bytes_ -= size;
     } else {
       cached_large_bytes_ -= size;
+    }
+    it = upstream_blocks_.erase(it);
+  }
+
+  return released;
+}
+
+std::size_t caching_memory_resource_impl::release_all_pools() noexcept
+{
+  return release_pool(true) + release_pool(false);
+}
+
+std::size_t caching_memory_resource_impl::release_oversized_blocks(std::size_t size) noexcept
+{
+  auto const max_split_size = max_split_size_.value_or(std::numeric_limits<std::size_t>::max());
+  if (max_split_size == std::numeric_limits<std::size_t>::max()) { return 0; }
+
+  this->merge_all_free_blocks();
+
+  auto const target_size = std::max(size, max_split_size);
+  std::size_t released{};
+
+  for (auto it = upstream_blocks_.begin();
+       it != upstream_blocks_.end() && released < target_size;) {
+    if (it->size < max_split_size) {
+      ++it;
+      continue;
+    }
+
+    auto const block = block_type{it->pointer, it->size, true};
+    if (!this->remove_free_block(block)) {
+      ++it;
+      continue;
+    }
+
+    auto const block_size = it->size;
+    get_upstream_resource().deallocate_sync(
+      it->pointer, block_size, rmm::CUDA_ALLOCATION_ALIGNMENT);
+    released += block_size;
+    if (it->is_small) {
+      cached_small_bytes_ -= block_size;
+    } else {
+      cached_large_bytes_ -= block_size;
     }
     it = upstream_blocks_.erase(it);
   }
