@@ -263,6 +263,35 @@ class stream_ordered_memory_resource : public crtp<PoolResource> {
     stream_free_blocks_[get_event(stream)].insert(std::move(blocks));
   }
 
+  void merge_all_free_blocks()
+  {
+    auto iter = stream_free_blocks_.begin();
+    if (iter == stream_free_blocks_.end()) { return; }
+
+    RMM_ASSERT_CUDA_SUCCESS_SAFE_SHUTDOWN(cudaEventSynchronize(iter->first.event));
+    auto& blocks = iter->second;
+    ++iter;
+
+    while (iter != stream_free_blocks_.end()) {
+      RMM_ASSERT_CUDA_SUCCESS_SAFE_SHUTDOWN(cudaEventSynchronize(iter->first.event));
+      blocks.insert(std::move(iter->second));
+      iter = stream_free_blocks_.erase(iter);
+    }
+  }
+
+  bool remove_free_block(block_type const& block)
+  {
+    for (auto& free_blocks : stream_free_blocks_) {
+      if (free_blocks.second.remove_block(block)) { return true; }
+    }
+    return false;
+  }
+
+  block_type get_block_from_free_list(free_list& blocks, std::size_t size)
+  {
+    return blocks.get_block(size);
+  }
+
 #ifdef RMM_DEBUG_PRINT
   void print_free_blocks() const
   {
@@ -371,7 +400,7 @@ class stream_ordered_memory_resource : public crtp<PoolResource> {
     // Try to find a satisfactory block in free list for the same stream (no sync required)
     auto iter = stream_free_blocks_.find(stream_event);
     if (iter != stream_free_blocks_.end()) {
-      block_type const block = iter->second.get_block(size);
+      block_type const block = this->underlying().get_block_from_free_list(iter->second, size);
       if (block.is_valid()) { return allocate_and_insert_remainder(block, size, iter->second); }
     }
 
@@ -430,10 +459,10 @@ class stream_ordered_memory_resource : public crtp<PoolResource> {
 
         stream_free_blocks_.erase(iter);
 
-        block_type const block = blocks.get_block(size);  // get the best fit block in merged lists
+        block_type const block = this->underlying().get_block_from_free_list(blocks, size);
         if (block.is_valid()) { return allocate_and_insert_remainder(block, size, blocks); }
       } else {
-        block_type const block = other_blocks.get_block(size);
+        block_type const block = this->underlying().get_block_from_free_list(other_blocks, size);
         if (block.is_valid()) {
           // Since we found a block associated with a different stream, we have to insert a wait
           // on the stream's associated event into the allocating stream.

@@ -85,13 +85,24 @@ caching_memory_resource_impl::block_type caching_memory_resource_impl::expand_po
   }
 }
 
+caching_memory_resource_impl::block_type caching_memory_resource_impl::get_block_from_free_list(
+  free_list& blocks, std::size_t size)
+{
+  auto const max_split_size = max_split_size_.value_or(std::numeric_limits<std::size_t>::max());
+  return blocks.get_block(size, [this, size, max_split_size](block_type const& block) {
+    if (block_is_small(block)) { return true; }
+    if (size < max_split_size && block.size() >= max_split_size) { return false; }
+    return size < max_split_size || block.size() < size + large_segment_size;
+  });
+}
+
 caching_memory_resource_impl::split_block caching_memory_resource_impl::allocate_from_block(
   block_type const& block, std::size_t size)
 {
-  releasable_blocks_.erase(block.pointer());
-
-  auto const alloc = block_type{block.pointer(), size, block.is_head()};
-  if (!should_split(block, size)) { return {block, {}}; }
+  auto const split = should_split(block, size);
+  auto const alloc = block_type{block.pointer(), split ? size : block.size(), block.is_head()};
+  allocated_blocks_.insert(alloc);
+  if (!split) { return {alloc, {}}; }
 
   auto rest = block_type{block.pointer() + size, block.size() - size, false};
   return {alloc, rest};
@@ -100,12 +111,18 @@ caching_memory_resource_impl::split_block caching_memory_resource_impl::allocate
 caching_memory_resource_impl::block_type caching_memory_resource_impl::free_block(
   void* ptr, std::size_t size) noexcept
 {
-  auto const aligned_size = rmm::align_up(size, rmm::CUDA_ALLOCATION_ALIGNMENT);
-  auto const block        = block_type{static_cast<char*>(ptr), aligned_size, false};
+  auto const iter = allocated_blocks_.find(static_cast<char*>(ptr));
+  if (iter != allocated_blocks_.end()) {
+    auto block = *iter;
+    allocated_blocks_.erase(iter);
+    return block;
+  }
 
-  auto const iter = upstream_blocks_.upper_bound(segment{static_cast<char*>(ptr), 0, false});
-  if (iter != upstream_blocks_.begin()) {
-    auto const candidate   = std::prev(iter);
+  auto const aligned_size = rmm::align_up(size, rmm::CUDA_ALLOCATION_ALIGNMENT);
+  auto const upstream_iter =
+    upstream_blocks_.upper_bound(segment{static_cast<char*>(ptr), 0, false});
+  if (upstream_iter != upstream_blocks_.begin()) {
+    auto const candidate   = std::prev(upstream_iter);
     auto const segment_end = candidate->pointer + candidate->size;
     if (candidate->pointer <= static_cast<char*>(ptr) && static_cast<char*>(ptr) < segment_end) {
       return block_type{
@@ -113,7 +130,7 @@ caching_memory_resource_impl::block_type caching_memory_resource_impl::free_bloc
     }
   }
 
-  return block;
+  return block_type{static_cast<char*>(ptr), aligned_size, false};
 }
 
 std::pair<std::size_t, std::size_t> caching_memory_resource_impl::free_list_summary(
@@ -138,9 +155,8 @@ bool caching_memory_resource_impl::should_split(block_type const& block,
 {
   auto const remaining = block.size() - size;
   if (block_is_small(block)) { return remaining >= minimum_block_size; }
-  if (!max_split_size_.has_value()) { return remaining >= minimum_block_size; }
-  if (block.size() >= max_split_size_.value() && size < max_split_size_.value()) { return false; }
-  return remaining > small_size_threshold;
+  auto const max_split_size = max_split_size_.value_or(std::numeric_limits<std::size_t>::max());
+  return size < max_split_size && remaining > small_size_threshold;
 }
 
 bool caching_memory_resource_impl::block_is_small(block_type const& block) const noexcept
@@ -159,36 +175,31 @@ bool caching_memory_resource_impl::block_is_small(block_type const& block) const
 
 std::size_t caching_memory_resource_impl::release_pool(bool is_small) noexcept
 {
-  for (auto const& upstream : upstream_blocks_) {
-    if (upstream.is_small != is_small) { continue; }
-    releasable_blocks_[upstream.pointer] = released_block{upstream.size, upstream.is_small};
-  }
+  this->merge_all_free_blocks();
 
   std::size_t released{};
 
-  for (auto it = releasable_blocks_.begin(); it != releasable_blocks_.end();) {
-    auto const [ptr, info] = *it;
-    if (info.is_small != is_small) {
+  for (auto it = upstream_blocks_.begin(); it != upstream_blocks_.end();) {
+    if (it->is_small != is_small) {
       ++it;
       continue;
     }
 
-    auto const segment_it = upstream_blocks_.find(segment{ptr, 0, is_small});
-    if (segment_it == upstream_blocks_.end() || segment_it->size != info.size ||
-        segment_it->is_small != is_small) {
-      it = releasable_blocks_.erase(it);
+    auto const block = block_type{it->pointer, it->size, true};
+    if (!this->remove_free_block(block)) {
+      ++it;
       continue;
     }
 
-    get_upstream_resource().deallocate_sync(ptr, info.size, rmm::CUDA_ALLOCATION_ALIGNMENT);
-    released += info.size;
+    auto const size = it->size;
+    get_upstream_resource().deallocate_sync(it->pointer, size, rmm::CUDA_ALLOCATION_ALIGNMENT);
+    released += size;
     if (is_small) {
-      cached_small_bytes_ -= info.size;
+      cached_small_bytes_ -= size;
     } else {
-      cached_large_bytes_ -= info.size;
+      cached_large_bytes_ -= size;
     }
-    upstream_blocks_.erase(segment_it);
-    it = releasable_blocks_.erase(it);
+    it = upstream_blocks_.erase(it);
   }
 
   return released;

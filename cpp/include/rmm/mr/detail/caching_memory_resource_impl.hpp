@@ -12,7 +12,6 @@
 #include <cuda/memory_resource>
 
 #include <cstddef>
-#include <map>
 #include <mutex>
 #include <optional>
 #include <set>
@@ -78,6 +77,8 @@ class caching_memory_resource_impl final
 
   block_type expand_pool(std::size_t size, free_list& blocks, cuda_stream_view stream);
 
+  block_type get_block_from_free_list(free_list& blocks, std::size_t size);
+
   split_block allocate_from_block(block_type const& block, std::size_t size);
 
   block_type free_block(void* ptr, std::size_t size) noexcept;
@@ -93,11 +94,6 @@ class caching_memory_resource_impl final
     bool operator<(segment const& other) const noexcept { return pointer < other.pointer; }
   };
 
-  struct released_block {
-    std::size_t size{};
-    bool is_small{};
-  };
-
   [[nodiscard]] bool is_small_allocation(std::size_t size) const noexcept;
 
   [[nodiscard]] bool should_split(block_type const& block, std::size_t size) const noexcept;
@@ -111,7 +107,7 @@ class caching_memory_resource_impl final
   cuda::mr::any_resource<cuda::mr::device_accessible> upstream_mr_;
   std::optional<std::size_t> max_split_size_{};
   std::set<segment> upstream_blocks_{};
-  std::map<char*, released_block, std::less<>> releasable_blocks_{};
+  std::set<block_type, compare_blocks<block_type>> allocated_blocks_{};
   std::size_t cached_small_bytes_{};
   std::size_t cached_large_bytes_{};
 };

@@ -95,11 +95,15 @@ class RMM_EXPORT caching_memory_resource
 
   /**
    * @brief Return the total number of cached bytes currently owned by the small-allocation pool.
+   *
+   * @return Total cached bytes in the small-allocation pool.
    */
   [[nodiscard]] std::size_t cached_small_bytes() const noexcept;
 
   /**
    * @brief Return the total number of cached bytes currently owned by the large-allocation pool.
+   *
+   * @return Total cached bytes in the large-allocation pool.
    */
   [[nodiscard]] std::size_t cached_large_bytes() const noexcept;
 
@@ -107,6 +111,9 @@ class RMM_EXPORT caching_memory_resource
    * @brief Return the upstream segment size used for a request of `bytes` bytes.
    *
    * This exposes the allocator's request-rounding policy.
+   *
+   * @param bytes The requested allocation size in bytes.
+   * @return Upstream segment size used for the request.
    */
   [[nodiscard]] std::size_t upstream_allocation_size(std::size_t bytes) const noexcept;
 };
