@@ -27,6 +27,15 @@ enum class caching_memory_resource_oom_fallback_policy {
   release_oversized_then_all,  ///< Release oversized whole segments first, then all segments.
 };
 
+/**
+ * @brief Policy controlling whether small and large cached segments can satisfy each other's
+ * allocation requests.
+ */
+enum class caching_memory_resource_pool_policy {
+  separate,  ///< Small requests use small segments and large requests use large segments.
+  unified,   ///< Any cached segment large enough for a request may be reused.
+};
+
 namespace detail {
 
 class caching_memory_resource_impl final
@@ -45,7 +54,9 @@ class caching_memory_resource_impl final
     cuda::mr::any_resource<cuda::mr::device_accessible> upstream,
     std::optional<std::size_t> max_split_size = std::nullopt,
     caching_memory_resource_oom_fallback_policy oom_fallback_policy =
-      caching_memory_resource_oom_fallback_policy::release_oversized_then_all);
+      caching_memory_resource_oom_fallback_policy::release_oversized_then_all,
+    caching_memory_resource_pool_policy pool_policy =
+      caching_memory_resource_pool_policy::separate);
 
   ~caching_memory_resource_impl();
 
@@ -123,6 +134,7 @@ class caching_memory_resource_impl final
   cuda::mr::any_resource<cuda::mr::device_accessible> upstream_mr_;
   std::optional<std::size_t> max_split_size_{};
   caching_memory_resource_oom_fallback_policy oom_fallback_policy_{};
+  caching_memory_resource_pool_policy pool_policy_{};
   std::set<segment> upstream_blocks_{};
   std::set<block_type, compare_blocks<block_type>> allocated_blocks_{};
   std::size_t cached_small_bytes_{};

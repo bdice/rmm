@@ -212,6 +212,8 @@ Benchmark report location:
 
 ### Step 3: Implement Separate Pool Policy
 
+Status: Implemented with `caching_memory_resource_pool_policy`.
+
 - Prefer the smallest structural change that keeps stream-ordering behavior intact.
 - Avoid large refactors of `stream_ordered_memory_resource` unless the existing free-list model cannot express pool separation cleanly.
 - Keep `pool_policy::unified` available for benchmarks if the extra complexity is modest.

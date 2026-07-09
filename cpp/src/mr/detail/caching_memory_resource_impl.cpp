@@ -17,10 +17,12 @@ namespace detail {
 caching_memory_resource_impl::caching_memory_resource_impl(
   cuda::mr::any_resource<cuda::mr::device_accessible> upstream,
   std::optional<std::size_t> max_split_size,
-  caching_memory_resource_oom_fallback_policy oom_fallback_policy)
+  caching_memory_resource_oom_fallback_policy oom_fallback_policy,
+  caching_memory_resource_pool_policy pool_policy)
   : upstream_mr_{std::move(upstream)},
     max_split_size_{max_split_size},
-    oom_fallback_policy_{oom_fallback_policy}
+    oom_fallback_policy_{oom_fallback_policy},
+    pool_policy_{pool_policy}
 {
 }
 
@@ -110,7 +112,12 @@ caching_memory_resource_impl::block_type caching_memory_resource_impl::get_block
 {
   auto const max_split_size = max_split_size_.value_or(std::numeric_limits<std::size_t>::max());
   return blocks.get_block(size, [this, size, max_split_size](block_type const& block) {
-    if (block_is_small(block)) { return true; }
+    auto const block_is_small_pool = block_is_small(block);
+    if (pool_policy_ == caching_memory_resource_pool_policy::separate &&
+        block_is_small_pool != is_small_allocation(size)) {
+      return false;
+    }
+    if (block_is_small_pool) { return true; }
     if (size < max_split_size && block.size() >= max_split_size) { return false; }
     return size < max_split_size || block.size() < size + large_segment_size;
   });

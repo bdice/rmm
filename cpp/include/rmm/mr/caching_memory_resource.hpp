@@ -62,12 +62,15 @@ class RMM_EXPORT caching_memory_resource
    * @param max_split_size Optional threshold for the large-allocation pool. If set, large cached
    * blocks at or above this size will not be split to satisfy smaller requests.
    * @param oom_fallback_policy Policy used after an upstream allocation failure.
+   * @param pool_policy Policy controlling cross-pool cached block reuse.
    */
   explicit caching_memory_resource(
     cuda::mr::any_resource<cuda::mr::device_accessible> upstream,
     std::optional<std::size_t> max_split_size = std::nullopt,
     caching_memory_resource_oom_fallback_policy oom_fallback_policy =
-      caching_memory_resource_oom_fallback_policy::release_oversized_then_all);
+      caching_memory_resource_oom_fallback_policy::release_oversized_then_all,
+    caching_memory_resource_pool_policy pool_policy =
+      caching_memory_resource_pool_policy::separate);
 
   /**
    * @briefreturn{rmm::device_async_resource_ref to the upstream resource}
