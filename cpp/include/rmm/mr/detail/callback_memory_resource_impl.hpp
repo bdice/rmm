@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2022-2026, NVIDIA CORPORATION.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
@@ -13,7 +13,7 @@
 #include <cstddef>
 #include <functional>
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace mr {
 namespace detail {
 
@@ -79,4 +79,4 @@ class callback_memory_resource_impl {
 
 }  // namespace detail
 }  // namespace mr
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

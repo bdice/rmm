@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION.
+ * SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
@@ -15,7 +15,7 @@
 #include <cstddef>
 #include <memory>
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace mr {
 namespace detail {
 
@@ -93,4 +93,4 @@ class cuda_async_managed_memory_resource_impl {
 
 }  // namespace detail
 }  // namespace mr
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END

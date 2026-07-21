@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2020-2026, NVIDIA CORPORATION.
+ * SPDX-FileCopyrightText: Copyright (c) 2020-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
@@ -24,7 +24,7 @@
 #include <iostream>
 #endif
 
-namespace RMM_NAMESPACE {
+RMM_NAMESPACE_BEGIN
 namespace mr::detail {
 
 /**
@@ -536,4 +536,4 @@ class stream_ordered_memory_resource : public crtp<PoolResource> {
 };  // namespace detail
 
 }  // namespace mr::detail
-}  // namespace RMM_NAMESPACE
+RMM_NAMESPACE_END
