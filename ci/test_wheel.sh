@@ -14,6 +14,17 @@ RMM_WHEELHOUSE=$(rapids-download-from-github "$(rapids-artifact-name wheel_pytho
 # generate constraints (possibly pinning to oldest support versions of dependencies)
 rapids-generate-pip-constraints test_python "${PIP_CONSTRAINT}"
 
+python -m venv librmm-env
+. librmm-env/bin/activate
+
+rapids-pip-retry install \
+    -v \
+    --prefer-binary \
+    --constraint "${PIP_CONSTRAINT}" \
+    "$(echo "${LIBRMM_WHEELHOUSE}"/librmm_"${RAPIDS_PY_CUDA_SUFFIX}"*.whl)"
+python -c "import librmm; librmm.load_library()"
+deactivate
+
 # notes:
 #
 #   * echo to expand wildcard before adding `[test]` requires for pip
