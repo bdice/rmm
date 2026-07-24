@@ -22,7 +22,7 @@ rapids-pip-retry install \
     --prefer-binary \
     --constraint "${PIP_CONSTRAINT}" \
     "$(echo "${LIBRMM_WHEELHOUSE}"/librmm_"${RAPIDS_PY_CUDA_SUFFIX}"*.whl)"
-python -c "import librmm; librmm.load_library()"
+python -c "import librmm; assert librmm.load_library() is not None"
 deactivate
 
 # notes:
