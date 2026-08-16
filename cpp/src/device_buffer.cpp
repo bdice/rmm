@@ -4,6 +4,7 @@
  */
 
 #include <rmm/aligned.hpp>
+#include <rmm/cuda_stream_view.hpp>
 #include <rmm/detail/error.hpp>
 #include <rmm/device_buffer.hpp>
 #include <rmm/error.hpp>
@@ -82,7 +83,7 @@ device_buffer::device_buffer(device_buffer&& other) noexcept
   other._size      = 0;
   other._alignment = 1;
   other._capacity  = 0;
-  other._stream    = cuda::stream_ref{cudaStream_t{nullptr}};
+  other._stream    = rmm::cuda_stream_default;
   other._device    = cuda_device_id{-1};
 }
 
@@ -104,7 +105,7 @@ device_buffer& device_buffer::operator=(device_buffer&& other) noexcept
     other._size      = 0;
     other._alignment = 1;
     other._capacity  = 0;
-    other._stream    = cuda::stream_ref{cudaStream_t{nullptr}};
+    other._stream    = rmm::cuda_stream_default;
     other._device    = cuda_device_id{-1};
   }
   return *this;
@@ -114,7 +115,7 @@ device_buffer::~device_buffer() noexcept
 {
   cuda_set_device_raii dev{_device};
   deallocate_async();
-  _stream = cuda::stream_ref{cudaStream_t{nullptr}};
+  _stream = rmm::cuda_stream_default;
 }
 
 void device_buffer::allocate_async(std::size_t bytes)
