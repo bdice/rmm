@@ -308,7 +308,7 @@ class device_uvector {
     value_type value;
     RMM_CUDA_TRY(cudaMemcpyAsync(
       &value, element_ptr(element_index), sizeof(value), cudaMemcpyDefault, stream.get()));
-    RMM_CUDA_TRY(cudaStreamSynchronize(stream.get()));
+    stream.sync();
     return value;
   }
 
